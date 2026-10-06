@@ -1,9 +1,10 @@
 ---
 title: Seed script and end-to-end API smoke test
-status: todo
-owner:
+status: in_progress
+owner: R1427WW10P/agent-2
 deps: [pdf-report]
 prio: 2
+lease_until: 2026-10-06T09:36:11Z
 ---
 ## Goal
 Make the demo look alive (SPEC S1) and prove the whole backend flow against a real server (SPEC S2).
