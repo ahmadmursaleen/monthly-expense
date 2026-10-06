@@ -170,3 +170,11 @@ Conventions:
 - Add dependencies with `npm install -w backend|frontend <pkg>` and commit `package-lock.json`.
   Keep TypeScript below 6.1 (typescript-eslint peer range).
 - Commit sub-agent reports in `reviews/` together with the task's code.
+
+Shell rules (headless agents: anything not allowed in `.claude/settings.json` is denied, not asked):
+- Create and change files only with the Edit/Write tools. No `sed -i`, `python -c`/`python -` scripts,
+  `>`/`>>` redirects or `tee` to write files: they are denied.
+- Run git from the current directory (the repo root). Never `cd <dir> && git ...`: it is denied.
+- Never put non-ASCII whitespace (e.g. the U+202F / U+00A0 that `Intl` emits) into a shell command: it
+  is denied. Put such characters into files with Edit/Write, or use ` ` escapes in code.
+- Temporary files go nowhere: read with `cat`/`grep`/`head`/`tail`, edit with Edit.
