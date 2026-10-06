@@ -1,0 +1,12 @@
+board.html
+BOARD.md
+__pycache__/
+node_modules/
+dist/
+coverage/
+*.db
+*.db-journal
+*.sqlite
+backend/data/
+.idea/
+.env

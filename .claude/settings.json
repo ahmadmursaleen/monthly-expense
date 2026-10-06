@@ -1,0 +1,9 @@
+{"permissions": {
+  "allow": ["Bash(python tasks.py:*)", "Bash(python3 tasks.py:*)", "Bash(git:*)",
+            "Bash(npm:*)", "Bash(npx:*)", "Bash(node:*)",
+            "Bash(sh .taskcheck:*)", "Bash(sh scripts/check.sh:*)",
+            "Bash(curl:*)", "Bash(cd:*)", "Bash(ls:*)", "Bash(cat:*)", "Bash(head:*)", "Bash(tail:*)",
+            "Bash(grep:*)", "Bash(find:*)", "Bash(wc:*)", "Bash(sleep:*)", "Bash(mkdir:*)",
+            "Skill", "Agent"],
+  "deny":  ["Bash(git push:*)"]
+}}
