@@ -29,3 +29,4 @@ SPEC M1–M3, M9: the dialogs to create, edit and delete expenses, with validati
 Owns `ExpenseDialog.tsx`, `DeleteDialog.tsx` and their CSS/tests only. Keep the props from `fe-shell`;
 if the contract is insufficient, make the smallest change elsewhere and record it with `tasks.py assume`.
 Do not add npm dependencies (avoids package-lock conflicts with parallel tasks).
+- ASSUMPTION (2026-10-06 11:02+0200 by R1427WW10P/agent-2): frontend-design: dialogs follow docs/UI-DESIGN.md as-is (native dialog, --surface panel, --shadow-raised, 28rem); the title sits on a 2px ink rule like a ledger page heading; amount field is right-aligned tabular with a trailing euro sign like a ledger amount column; amount and date share one row (stacked below 720px); errors in --danger below each field; no new tokens
