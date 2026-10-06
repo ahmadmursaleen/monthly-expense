@@ -4,7 +4,7 @@ status: in_progress
 owner: R1427WW10P/agent-2
 deps: [fe-shell]
 prio: 1
-lease_until: 2026-10-06T09:21:48Z
+lease_until: 2026-10-06T09:25:36Z
 ---
 ## Goal
 SPEC M1–M3, M9: the dialogs to create, edit and delete expenses, with validation and error states.
