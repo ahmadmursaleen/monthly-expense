@@ -48,3 +48,4 @@ The only frontend task allowed to add npm dependencies (e.g. self-hosted fonts).
 (SPEC §3). Do not edit `docs/ARCHITECTURE.md` (owned by `tx-api` at the same time).
 - ASSUMPTION (2026-10-06 10:46+0200 by R1427WW10P/agent-2): frontend-design: Kassenbuch (ledger book) direction - cool green-grey ledger paper, ink-blue text/actions, ruled list rows; Bricolage Grotesque for the month title, Public Sans (tabular figures) for UI; fonts self-hosted via @fontsource-variable
 - ASSUMPTION (2026-10-06 10:46+0200 by R1427WW10P/agent-2): Month nav uses history.replaceState-free pushState on ?month=; invalid/missing month normalized to current month with replaceState so reloads keep it
+- ASSUMPTION (2026-10-06 10:54+0200 by R1427WW10P/agent-2): UI design notes live in docs/UI-DESIGN.md (task AC), not docs/ARCHITECTURE.md as SPEC 8 says, because this task must not edit ARCHITECTURE.md (owned by tx-api); a pointer can be added there later
