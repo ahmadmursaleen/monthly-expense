@@ -20,6 +20,8 @@ export interface TransactionsRepo {
   /** All transactions of a `YYYY-MM` month, date desc, then id desc. */
   listByMonth(month: string): Transaction[];
   summarizeMonth(month: string): MonthSummary;
+  /** Deletes every transaction and inserts `inputs`, atomically. Returns the number of rows deleted. */
+  replaceAll(inputs: TransactionInput[]): number;
 }
 
 interface Row {
@@ -111,6 +113,22 @@ export function createTransactionsRepo(db: DatabaseSync, now: () => Date = () =>
         count: byCategory.reduce((sum, c) => sum + c.count, 0),
         byCategory,
       };
+    },
+
+    replaceAll(inputs) {
+      const ts = now().toISOString();
+      db.exec("BEGIN");
+      try {
+        const deleted = Number(db.prepare("DELETE FROM transactions").run().changes);
+        for (const input of inputs) {
+          insertStmt.run(input.description, input.amountCents, input.category, input.date, ts, ts);
+        }
+        db.exec("COMMIT");
+        return deleted;
+      } catch (err) {
+        db.exec("ROLLBACK");
+        throw err;
+      }
     },
   };
 }

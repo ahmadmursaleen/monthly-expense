@@ -300,3 +300,21 @@ describe("persistence", () => {
     }
   });
 });
+
+describe("transactions repo replaceAll", () => {
+  it("deletes everything, inserts the new rows and returns the deleted count", () => {
+    const repo = memoryRepo(() => new Date("2026-10-06T08:30:00.000Z"));
+    repo.create(input({ date: "2026-09-01" }));
+    repo.create(input());
+    expect(repo.replaceAll([input({ description: "Seeded" }), input({ description: "Seeded 2", date: "2026-10-05" })])).toBe(2);
+    expect(repo.listByMonth("2026-09")).toEqual([]);
+    expect(repo.listByMonth("2026-10").map((t) => t.description)).toEqual(["Seeded", "Seeded 2"]);
+  });
+
+  it("rolls back when an insert fails", () => {
+    const repo = memoryRepo();
+    const kept = repo.create(input());
+    expect(() => repo.replaceAll([input(), input({ amountCents: 0 })])).toThrow();
+    expect(repo.listByMonth("2026-10")).toEqual([kept]);
+  });
+});
