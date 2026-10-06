@@ -27,3 +27,4 @@ SPEC M6, M7: narrow the list by description and category, and download the month
 Owns `FilterBar.tsx`, `filters.ts`, `ReportButton.tsx` and their CSS/tests only. Keep the props from
 `fe-shell`; if the contract is insufficient, make the smallest change elsewhere and record it with
 `tasks.py assume`. Do not add npm dependencies (avoids package-lock conflicts with parallel tasks).
+- ASSUMPTION (2026-10-06 11:07+0200 by R1427WW10P/agent-1): frontend-design: kept the cash-book direction quiet - visible sentence-case labels above 40px fields with --control-border, Clear as a .btn-quiet at field height, outlined .btn for Download PDF (Add expense stays the one primary); fields stack full width below 720px
