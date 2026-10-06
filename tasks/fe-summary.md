@@ -1,10 +1,10 @@
 ---
 title: Summary panel with category spending bars
-status: todo
-owner: 
+status: in_progress
+owner: sisterPC/agent-1
 deps: [fe-shell]
 prio: 2
-lease_until: 
+lease_until: 2026-10-06T11:56:10Z
 releases: 0
 extended: 
 ---
