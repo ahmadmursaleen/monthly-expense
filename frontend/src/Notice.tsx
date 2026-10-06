@@ -47,7 +47,8 @@ export function NoticeProvider({ children }: { children: ReactNode }) {
   return (
     <NotifyContext.Provider value={notify}>
       {children}
-      <div className="notices" aria-live="polite">
+      {/* No aria-live here: each notice is its own live region (status = polite, alert = assertive). */}
+      <div className="notices">
         {notices.map((n) => (
           <div key={n.id} className={`notice notice--${n.kind}`} role={n.kind === "error" ? "alert" : "status"}>
             <span className="notice__message">{n.message}</span>

@@ -1,4 +1,5 @@
 import type { Category, Transaction } from "./types";
+import "./ExpenseDialog.css";
 
 export interface ExpenseDialogProps {
   open: boolean;

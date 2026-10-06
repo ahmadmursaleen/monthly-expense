@@ -12,6 +12,8 @@
   --ink-faint: #5f6a7a;
   --rule: #b9cdbf;
   --rule-strong: #8fae99;
+  /* Borders of inputs, selects and buttons: >= 3:1 on --surface (4.2:1) and --paper (3.8:1). */
+  --control-border: #677f6f;
   --action: #2846b8;
   --action-hover: #1f3896;
   --action-tint: #e3e8f8;
@@ -104,7 +106,7 @@ textarea {
   gap: var(--space-2);
   min-height: 2.5rem;
   padding: 0 var(--space-4);
-  border: 1px solid var(--rule-strong);
+  border: 1px solid var(--control-border);
   border-radius: var(--radius-md);
   background: var(--surface);
   color: var(--ink);

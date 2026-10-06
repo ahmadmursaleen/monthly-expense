@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { currentMonth } from "./format";
 
-const MONTH = /^\d{4}-(0[1-9]|1[0-2])$/;
+const MONTH = /^[1-9]\d{3}-(0[1-9]|1[0-2])$/;
 
 /** The `?month=YYYY-MM` of the current URL; missing or invalid → the current month. */
 export function monthFromUrl(search: string = window.location.search): string {

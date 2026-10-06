@@ -25,10 +25,14 @@ type Result =
  * data stays visible; responses for a month or reload that is no longer current are ignored.
  */
 export function useMonthData(month: string): MonthData {
-  const [version, setVersion] = useState(0);
+  // Every month change and every reload gets a new sequence number, so returning to a month (A -> B -> A)
+  // is a new request and never matches an older result for that month.
+  const [request, setRequest] = useState({ month, seq: 0 });
+  if (request.month !== month) setRequest({ month, seq: request.seq + 1 });
+  const seq = request.month === month ? request.seq : request.seq + 1;
   const [result, setResult] = useState<Result | null>(null);
   const [lastData, setLastData] = useState<Extract<Result, { summary: MonthSummary }> | null>(null);
-  const key = `${month}#${version}`;
+  const key = `${month}#${seq}`;
 
   useEffect(() => {
     let current = true;
@@ -49,7 +53,7 @@ export function useMonthData(month: string): MonthData {
     };
   }, [key, month]);
 
-  const reload = useCallback(() => setVersion((v) => v + 1), []);
+  const reload = useCallback(() => setRequest((r) => ({ ...r, seq: r.seq + 1 })), []);
 
   const data = lastData?.month === month ? lastData : null;
   return {

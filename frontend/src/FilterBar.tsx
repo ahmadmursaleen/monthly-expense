@@ -1,5 +1,6 @@
 import type { Filters } from "./filters";
 import type { Category } from "./types";
+import "./FilterBar.css";
 
 export interface FilterBarProps {
   categories: Category[];

@@ -26,7 +26,8 @@ all-caps labels.
 | `--surface` | `#fbfcfa` | sheets: list, summary, dialogs, toasts |
 | `--ink` | `#1d2a44` | text, the heavy header rule |
 | `--ink-soft` / `--ink-faint` | `#4d5a70` / `#5f6a7a` | secondary text (dates, category labels) |
-| `--rule` / `--rule-strong` | `#b9cdbf` / `#8fae99` | row rules, control borders |
+| `--rule` / `--rule-strong` | `#b9cdbf` / `#8fae99` | row rules, sheet and section rules (decorative, not for controls) |
+| `--control-border` | `#677f6f` | borders of inputs, selects and `.btn` (4.2:1 on `--surface`, 3.8:1 on `--paper`, meets WCAG 1.4.11) |
 | `--action` | `#2846b8` | primary buttons, links, focus ring, bars (`--bar`) |
 | `--danger` | `#b3261e` | delete, error banner and error toasts (`--danger-tint` background) |
 | `--success` | `#2e6b45` | success toasts |
@@ -58,7 +59,7 @@ the bars stay readable in black and white. All text colors pass WCAG AA on `--pa
   fill, one per area: "Add expense", dialog submit), `.btn-danger` (confirm delete), `.btn-quiet`
   (text button, e.g. row Edit/Delete). Min height 40 px (32 px for quiet).
 - **Inputs** (for `fe-form` / `fe-filters-report`): 40 px high, `--surface` background,
-  `1px solid var(--rule-strong)`, `--radius-md`, a visible label above, and the error text in `--danger`
+  `1px solid var(--control-border)` (never `--rule`/`--rule-strong`: too faint for a field boundary), `--radius-md`, a visible label above, and the error text in `--danger`
   below the field with `aria-describedby`.
 - **Dialogs**: use a native `<dialog>` with `showModal()`, a `--surface` panel, `--shadow-raised`,
   max width 28rem, the title in `--text-lg`, and actions right-aligned (Cancel `.btn`, submit

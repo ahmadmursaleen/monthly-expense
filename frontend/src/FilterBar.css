@@ -1,0 +1,6 @@
+/* FilterBar styles (owned by fe-filters-report). Stub: the component renders nothing yet. */
+.filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}

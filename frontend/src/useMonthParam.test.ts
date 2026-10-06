@@ -22,6 +22,8 @@ describe("monthFromUrl", () => {
     ["?month=2026-01", "2026-01"],
     ["?month=2026-12", "2026-12"],
     ["?month=1999-06", "1999-06"],
+    ["?month=1000-01", "1000-01"],
+    ["?month=9999-12", "9999-12"],
     ["?foo=bar&month=2026-09", "2026-09"],
     ["?month=2026-09&month=2026-03", "2026-09"],
   ])("reads a valid month from %s", (search, expected) => {
@@ -43,6 +45,10 @@ describe("monthFromUrl", () => {
     "?month=2026-10%20",
     "?Month=2026-09",
     "?month=abcd-ef",
+    // Years below 1000 would be mis-rendered (Date.UTC maps 0-99 to 1900-1999).
+    "?month=0000-01",
+    "?month=0050-06",
+    "?month=0999-12",
   ])("falls back to the current month for %j", (search) => {
     expect(monthFromUrl(search)).toBe("2026-10");
   });

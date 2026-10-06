@@ -1,4 +1,5 @@
 import type { Transaction } from "./types";
+import "./DeleteDialog.css";
 
 export interface DeleteDialogProps {
   /** The row to delete; null means the dialog is closed. */

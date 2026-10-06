@@ -223,6 +223,56 @@ it("ignores a superseded reload that resolves after the newer one", async () => 
   expect(result.current.transactions).toEqual(newest);
 });
 
+it("reports loading when returning to a month before the other month loaded (A -> B -> A)", async () => {
+  const { result, rerender } = renderHook(({ month }) => useMonthData(month), {
+    initialProps: { month: "2026-10" },
+  });
+  await waitFor(() => expect(result.current.loading).toBe(false));
+
+  const septemberPending = deferred<Transaction[]>();
+  const octoberPending = deferred<Transaction[]>();
+  listMock
+    .mockImplementationOnce(() => septemberPending.promise)
+    .mockImplementationOnce(() => octoberPending.promise);
+  rerender({ month: "2026-09" });
+  rerender({ month: "2026-10" });
+
+  expect(result.current.loading).toBe(true);
+  expect(listMock).toHaveBeenCalledTimes(3);
+
+  const refreshed = [tx(5, "2026-10-06", "Refreshed"), ...october];
+  await act(async () => octoberPending.resolve(refreshed));
+  expect(result.current.loading).toBe(false);
+  expect(result.current.transactions).toEqual(refreshed);
+
+  await act(async () => septemberPending.resolve(september));
+  expect(result.current.transactions).toEqual(refreshed);
+});
+
+it("does not show a stale error when returning to a month that failed (A -> B -> A)", async () => {
+  listMock.mockRejectedValueOnce(new Error("offline"));
+  const { result, rerender } = renderHook(({ month }) => useMonthData(month), {
+    initialProps: { month: "2026-10" },
+  });
+  await waitFor(() => expect(result.current.error).toBe("offline"));
+
+  const septemberPending = deferred<Transaction[]>();
+  const octoberPending = deferred<Transaction[]>();
+  listMock
+    .mockImplementationOnce(() => septemberPending.promise)
+    .mockImplementationOnce(() => octoberPending.promise);
+  rerender({ month: "2026-09" });
+  rerender({ month: "2026-10" });
+
+  expect(result.current.loading).toBe(true);
+  expect(result.current.error).toBeNull();
+
+  await act(async () => octoberPending.resolve(october));
+  expect(result.current.loading).toBe(false);
+  expect(result.current.error).toBeNull();
+  expect(result.current.transactions).toEqual(october);
+});
+
 it("keeps the same reload function across renders", async () => {
   const { result } = renderHook(() => useMonthData("2026-10"));
   const reload = result.current.reload;
