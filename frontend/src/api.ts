@@ -1,7 +1,11 @@
 /** All HTTP calls to the backend go through this module. */
-import type { Category, MonthSummary, Transaction, TransactionInput } from "./types";
+import type { ApiErrorBody, Category, MonthSummary, Transaction, TransactionInput } from "./types";
 
 export const NETWORK_ERROR_MESSAGE = "Can't reach the server";
+export const UNEXPECTED_RESPONSE_MESSAGE = "Unexpected response from the server";
+
+/** Gateway errors (e.g. the Vite dev proxy answers 502 when the backend is down). */
+const GATEWAY_STATUSES = [502, 503, 504];
 
 /** Thrown for every failed request. `status` is 0 when the server could not be reached. */
 export class ApiError extends Error {
@@ -28,7 +32,9 @@ async function send(path: string, init?: RequestInit): Promise<Response> {
 }
 
 async function toApiError(res: Response): Promise<ApiError> {
-  const fallback = `Request failed (${res.status})`;
+  const fallback = GATEWAY_STATUSES.includes(res.status)
+    ? NETWORK_ERROR_MESSAGE
+    : `Request failed (${res.status})`;
   let body: unknown;
   try {
     body = await res.json();
@@ -36,7 +42,7 @@ async function toApiError(res: Response): Promise<ApiError> {
     return new ApiError(res.status, fallback);
   }
   if (typeof body !== "object" || body === null) return new ApiError(res.status, fallback);
-  const { error, fields } = body as { error?: unknown; fields?: unknown };
+  const { error, fields } = body as Partial<Record<keyof ApiErrorBody, unknown>>;
   const message = typeof error === "string" && error !== "" ? error : fallback;
   return new ApiError(res.status, message, isStringRecord(fields) ? fields : undefined);
 }
@@ -52,7 +58,11 @@ function isStringRecord(value: unknown): value is Record<string, string> {
 
 async function json<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await send(path, init);
-  return (await res.json()) as T;
+  try {
+    return (await res.json()) as T;
+  } catch {
+    throw new ApiError(res.status, UNEXPECTED_RESPONSE_MESSAGE);
+  }
 }
 
 function jsonBody(method: string, body: unknown): RequestInit {
@@ -85,7 +95,12 @@ export async function deleteTransaction(id: number): Promise<void> {
 
 export async function downloadReport(month: string): Promise<{ blob: Blob; filename: string }> {
   const res = await send(`/api/reports/${encodeURIComponent(month)}.pdf`);
-  const blob = await res.blob();
+  let blob: Blob;
+  try {
+    blob = await res.blob();
+  } catch {
+    throw new ApiError(0, NETWORK_ERROR_MESSAGE);
+  }
   return { blob, filename: filenameFrom(res.headers.get("Content-Disposition")) ?? `expenses-${month}.pdf` };
 }
 
