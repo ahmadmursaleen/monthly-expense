@@ -23,3 +23,4 @@ Make the demo look alive (SPEC S1) and prove the whole backend flow against a re
 
 ## Notes
 Backend only. Do not add npm dependencies (avoids package-lock conflicts with parallel tasks).
+- ASSUMPTION (2026-10-06 11:18+0200 by R1427WW10P/agent-2): generateSeed takes today as a YYYY-MM-DD string (CLI passes the local date), is deterministic per day, puts every category in every month, and never dates current-month expenses after today
