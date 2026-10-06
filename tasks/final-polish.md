@@ -4,7 +4,7 @@ status: in_progress
 owner: sisterPC/agent-1
 deps: [fe-summary,fe-form,fe-filters-report,seed-smoke]
 prio: 1
-lease_until: 2026-10-06T12:03:17Z
+lease_until: 2026-10-06T12:07:42Z
 ---
 ## Goal
 Make the app demo-ready (SPEC M10, S2) and verify the SPEC §2 demo script end to end.
