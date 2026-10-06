@@ -31,3 +31,4 @@ the formatting/parsing helpers. Independent of the backend: test with a mocked `
 Non-visual: do not use frontend-design, add no components. Replace the existing `getHealth` freely.
 Do not add npm dependencies (avoids package-lock conflicts with parallel tasks).
 - ASSUMPTION (2026-10-06 10:37+0200 by R1427WW10P/agent-1): parseAmount: dot-grouped thousands are only accepted with a comma decimal part (1.234,56); a bare '1.234' is rejected as ambiguous (could be 1234 EUR or 3 decimals). Plain '1234,56'/'1234.56' are accepted. No upper limit in parseAmount (server enforces max 1,000,000 EUR).
+- ASSUMPTION (2026-10-06 10:37+0200 by R1427WW10P/agent-1): ApiError.status is 0 for network failures; non-JSON or message-less error bodies get the message 'Request failed (<status>)'. downloadReport falls back to filename expenses-<month>.pdf if Content-Disposition is missing. Category ids typed as a CategoryId union of the 8 fixed ids.
