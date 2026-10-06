@@ -1,10 +1,10 @@
 ---
 title: Seed script and end-to-end API smoke test
-status: in_progress
+status: done
 owner: sisterPC/agent-1
 deps: [pdf-report]
 prio: 2
-lease_until: 2026-10-06T12:02:36Z
+lease_until: 
 releases: 0
 extended: 
 ---
