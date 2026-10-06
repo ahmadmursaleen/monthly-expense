@@ -43,11 +43,13 @@ function DeleteConfirm({ transaction, onClose, onDeleted }: DeleteConfirmProps) 
   }
 
   return (
-    <dialog ref={ref} className="delete-dialog" aria-labelledby={`${id}-title`}>
+    <dialog ref={ref} className="delete-dialog" aria-labelledby={`${id}-title`} aria-describedby={`${id}-hint`}>
       <h2 className="delete-dialog__title" id={`${id}-title`}>
         Delete “{transaction.description}” ({formatMoney(transaction.amountCents)})?
       </h2>
-      <p className="delete-dialog__hint">This can’t be undone.</p>
+      <p className="delete-dialog__hint" id={`${id}-hint`}>
+        This can’t be undone.
+      </p>
 
       {error !== null && (
         <p className="delete-dialog__alert" role="alert">

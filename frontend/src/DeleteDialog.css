@@ -10,18 +10,22 @@
   box-shadow: var(--shadow-raised);
 }
 
+/* Same ink-tinted veil as the expense dialog (fallback: ::backdrop may not inherit custom properties). */
 .delete-dialog::backdrop {
-  background: rgb(29 42 68 / 0.35);
+  background: color-mix(in srgb, var(--ink, #1d2a44) 35%, transparent);
 }
 
+/* Same heavy ink rule under the title as the expense dialog. */
 .delete-dialog__title {
+  padding-bottom: var(--space-2);
+  border-bottom: 2px solid var(--ink);
   font-size: var(--text-lg);
   font-weight: 700;
   overflow-wrap: anywhere;
 }
 
 .delete-dialog__hint {
-  margin: var(--space-2) 0 0;
+  margin: var(--space-3) 0 0;
   color: var(--ink-soft);
   font-size: var(--text-sm);
 }

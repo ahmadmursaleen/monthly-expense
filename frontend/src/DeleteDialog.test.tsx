@@ -37,6 +37,7 @@ it("asks to confirm with the description and amount", () => {
   setup();
   const dialog = screen.getByRole("dialog");
   expect(dialog).toHaveAccessibleName(/^Delete “Groceries” \(42,50\s€\)\?$/);
+  expect(dialog).toHaveAccessibleDescription("This can’t be undone.");
   expect(screen.getByRole("button", { name: "Cancel" })).toHaveFocus();
 });
 

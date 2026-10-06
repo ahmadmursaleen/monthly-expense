@@ -305,6 +305,42 @@ it("shows only the failing field's message and focuses that field", () => {
   expect(field("Amount")).toHaveFocus();
 });
 
+/** Records the field's invalid state and accessible description at the moment it receives focus. */
+function captureOnFocus(input: HTMLElement) {
+  const seen: { invalid: string | null; description: string }[] = [];
+  input.addEventListener("focus", () => {
+    const ids = input.getAttribute("aria-describedby") ?? "";
+    const description = ids
+      .split(" ")
+      .map((id) => document.getElementById(id)?.textContent ?? "")
+      .join(" ")
+      .trim();
+    seen.push({ invalid: input.getAttribute("aria-invalid"), description });
+  });
+  return seen;
+}
+
+it("links the error to the field before focusing it (client validation)", () => {
+  setup();
+  fill({ description: "Bus", amount: "abc", category: "transport", date: "2026-10-03" });
+  const seen = captureOnFocus(field("Amount"));
+  submit();
+  expect(field("Amount")).toHaveFocus();
+  expect(seen).toEqual([{ invalid: "true", description: "Amount must be greater than zero" }]);
+});
+
+it("links the error to the field before focusing it (server 400 fields)", async () => {
+  vi.mocked(createTransaction).mockRejectedValue(
+    new ApiError(400, "Invalid transaction", { amountCents: "Amount must be greater than zero" }),
+  );
+  setup();
+  fill({ description: "Bus", amount: "5", category: "transport", date: "2026-10-03" });
+  const seen = captureOnFocus(field("Amount"));
+  submit();
+  await vi.waitFor(() => expect(field("Amount")).toHaveFocus());
+  expect(seen).toEqual([{ invalid: "true", description: "Amount must be greater than zero" }]);
+});
+
 it("clears validation messages once the input is fixed and resubmitted", () => {
   vi.mocked(createTransaction).mockReturnValue(new Promise(() => {}));
   setup();

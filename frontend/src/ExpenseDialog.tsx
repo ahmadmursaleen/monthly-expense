@@ -1,4 +1,4 @@
-import { useId, useState, type FormEvent } from "react";
+import { useId, useLayoutEffect, useRef, useState, type FormEvent } from "react";
 import { ApiError, createTransaction, updateTransaction } from "./api";
 import { defaultDateFor, parseAmount } from "./format";
 import type { Category, Transaction, TransactionInput } from "./types";
@@ -19,6 +19,9 @@ export interface ExpenseDialogProps {
 
 type Field = "description" | "amount" | "category" | "date";
 type FieldErrors = Partial<Record<Field, string>>;
+
+/** Form order: the first invalid field in this order gets focus. */
+const FIELD_ORDER: readonly Field[] = ["description", "amount", "category", "date"];
 
 interface Values {
   description: string;
@@ -111,16 +114,33 @@ function ExpenseForm({ month, transaction, categories, onClose, onSaved }: Expen
     setValues((v) => ({ ...v, [field]: value }));
   }
 
+  /*
+   * Focus the first invalid field only after the errors are committed, so `aria-invalid` and
+   * `aria-describedby` are already in place when a screen reader announces the field.
+   */
+  const pendingFocus = useRef(false);
+  useLayoutEffect(() => {
+    if (!pendingFocus.current) return;
+    pendingFocus.current = false;
+    const field = FIELD_ORDER.find((f) => errors[f]);
+    if (field) document.getElementById(fieldId(field))?.focus();
+  });
+
+  function showErrors(found: FieldErrors) {
+    pendingFocus.current = true;
+    setErrors(found);
+  }
+
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (saving) return;
     const result = validate(values, categories);
-    setErrors(result.errors);
     setFormError(null);
     if (!result.input) {
-      focusFirstError(result.errors);
+      showErrors(result.errors);
       return;
     }
+    setErrors(result.errors);
     setSaving(true);
     try {
       const saved = transaction
@@ -130,18 +150,12 @@ function ExpenseForm({ month, transaction, categories, onClose, onSaved }: Expen
     } catch (err) {
       const serverErrors = err instanceof ApiError && err.fields ? mapServerFields(err.fields) : {};
       if (Object.keys(serverErrors).length > 0) {
-        setErrors(serverErrors);
-        focusFirstError(serverErrors);
+        showErrors(serverErrors);
       } else {
         setFormError(err instanceof Error ? err.message : "Saving failed");
       }
       setSaving(false);
     }
-  }
-
-  function focusFirstError(found: FieldErrors) {
-    const field = (["description", "amount", "category", "date"] as const).find((f) => found[f]);
-    if (field) document.getElementById(fieldId(field))?.focus();
   }
 
   function fieldProps(field: Field) {

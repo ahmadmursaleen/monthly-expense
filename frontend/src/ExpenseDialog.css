@@ -10,8 +10,9 @@
   box-shadow: var(--shadow-raised);
 }
 
+/* Ink-tinted veil. The fallback covers browsers where ::backdrop does not inherit custom properties. */
 .expense-dialog::backdrop {
-  background: rgb(29 42 68 / 0.35);
+  background: color-mix(in srgb, var(--ink, #1d2a44) 35%, transparent);
 }
 
 .expense-dialog__form {
