@@ -1,8 +1,10 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import express from "express";
 import request from "supertest";
 import { createApp } from "../app.js";
 import { openDb } from "../db.js";
-import { CATEGORIES, MESSAGES } from "../domain.js";
+import { CATEGORIES, MAX_AMOUNT_CENTS, MAX_DESCRIPTION_LENGTH, MESSAGES } from "../domain.js";
+import { apiErrorHandler } from "./api.js";
 
 const body = (overrides: Record<string, unknown> = {}) => ({
   description: "Groceries",
@@ -231,5 +233,245 @@ describe("round trip", () => {
     expect(list).toEqual([updated.body]);
     summary = (await request(app).get("/api/summary?month=2026-10")).body;
     expect(summary).toEqual({ month: "2026-10", totalCents: 4500, count: 1, byCategory: [{ category: "food", totalCents: 4500, count: 1 }] });
+  });
+});
+
+describe("validation boundaries over HTTP", () => {
+  it("accepts a description of exactly the max length and rejects one char more", async () => {
+    const app = newApp();
+    const ok = await request(app).post("/api/transactions").send(body({ description: "a".repeat(MAX_DESCRIPTION_LENGTH) }));
+    expect(ok.status).toBe(201);
+    expect(ok.body.description).toHaveLength(MAX_DESCRIPTION_LENGTH);
+
+    const tooLong = await request(app)
+      .post("/api/transactions")
+      .send(body({ description: "a".repeat(MAX_DESCRIPTION_LENGTH + 1) }));
+    expect(tooLong.status).toBe(400);
+    expect(tooLong.body.fields).toEqual({ description: MESSAGES.description });
+  });
+
+  it("accepts the max amount and rejects one cent more", async () => {
+    const app = newApp();
+    expect((await request(app).post("/api/transactions").send(body({ amountCents: MAX_AMOUNT_CENTS }))).status).toBe(201);
+    const res = await request(app).post("/api/transactions").send(body({ amountCents: MAX_AMOUNT_CENTS + 1 }));
+    expect(res.status).toBe(400);
+    expect(res.body.fields).toEqual({ amountCents: MESSAGES.amountCents });
+  });
+
+  it.each([
+    ["amountCents as numeric string", { amountCents: "4250" }, "amountCents"],
+    ["negative amount", { amountCents: -1 }, "amountCents"],
+    ["description as number", { description: 42 }, "description"],
+    ["category with wrong case", { category: "Food" }, "category"],
+    ["date as null", { date: null }, "date"],
+  ])("rejects %s with only that field", async (_name, override, field) => {
+    const res = await request(newApp()).post("/api/transactions").send(body(override));
+    expect(res.status).toBe(400);
+    expect(Object.keys(res.body.fields)).toEqual([field]);
+  });
+
+  it("answers 400 with all fields for a JSON array body", async () => {
+    const res = await request(newApp()).post("/api/transactions").send([body()]);
+    expect(res.status).toBe(400);
+    expect(Object.keys(res.body.fields).sort()).toEqual(["amountCents", "category", "date", "description"]);
+  });
+
+  it("answers 400 {error} for a JSON primitive body (strict JSON parser)", async () => {
+    const res = await request(newApp()).post("/api/transactions").set("Content-Type", "application/json").send("null");
+    expect(res.status).toBe(400);
+    expect(res.body).toEqual({ error: expect.any(String) });
+  });
+
+  it("does not parse a non-JSON content type and answers 400 with fields", async () => {
+    const res = await request(newApp())
+      .post("/api/transactions")
+      .set("Content-Type", "text/plain")
+      .send(JSON.stringify(body()));
+    expect(res.status).toBe(400);
+    expect(res.body.error).toEqual(expect.any(String));
+    expect(Object.keys(res.body.fields)).toHaveLength(4);
+  });
+
+  it("ignores client-supplied id and timestamps on create and update", async () => {
+    const app = newApp();
+    const created = await request(app)
+      .post("/api/transactions")
+      .send(body({ id: 99, createdAt: "2000-01-01T00:00:00.000Z", updatedAt: "2000-01-01T00:00:00.000Z" }));
+    expect(created.status).toBe(201);
+    expect(created.body.id).toBe(1);
+    expect(created.body.createdAt).not.toBe("2000-01-01T00:00:00.000Z");
+    expect(Object.keys(created.body).sort()).toEqual(
+      ["amountCents", "category", "createdAt", "date", "description", "id", "updatedAt"],
+    );
+
+    const updated = await request(app)
+      .put("/api/transactions/1")
+      .send(body({ id: 2, createdAt: "2000-01-01T00:00:00.000Z" }));
+    expect(updated.status).toBe(200);
+    expect(updated.body.id).toBe(1);
+    expect(updated.body.createdAt).toBe(created.body.createdAt);
+  });
+});
+
+describe("PUT/DELETE id edge cases", () => {
+  it.each(["1e0", "0x1", "+1", "9007199254740993", "99999999999999999999"])("PUT answers 404 for id %j", async (id) => {
+    const app = newApp();
+    await request(app).post("/api/transactions").send(body());
+    const res = await request(app).put(`/api/transactions/${id}`).send(body({ description: "Changed" }));
+    expect(res.status).toBe(404);
+    expect(res.body).toEqual({ error: expect.any(String) });
+    // the existing transaction 1 must not have been touched
+    const list = (await request(app).get("/api/transactions?month=2026-10")).body;
+    expect(list[0].description).toBe("Groceries");
+  });
+
+  it.each(["0", "-1", "1.0", "abc", "9007199254740991"])("DELETE answers 404 JSON for id %j and deletes nothing", async (id) => {
+    const app = newApp();
+    await request(app).post("/api/transactions").send(body());
+    const res = await request(app).delete(`/api/transactions/${id}`);
+    expect(res.status).toBe(404);
+    expect(res.body).toEqual({ error: expect.any(String) });
+    expect((await request(app).get("/api/transactions?month=2026-10")).body).toHaveLength(1);
+  });
+
+  it("PUT answers 404 (not 400) for an unknown id with an invalid body", async () => {
+    const res = await request(newApp()).put("/api/transactions/5").send({ description: "" });
+    expect(res.status).toBe(404);
+  });
+
+  it("PUT answers 400 {error} for a malformed JSON body", async () => {
+    const app = newApp();
+    await request(app).post("/api/transactions").send(body());
+    const res = await request(app).put("/api/transactions/1").set("Content-Type", "application/json").send("{oops");
+    expect(res.status).toBe(400);
+    expect(res.body).toEqual({ error: expect.any(String) });
+  });
+
+  it("DELETE only removes the targeted transaction", async () => {
+    const app = newApp();
+    await request(app).post("/api/transactions").send(body({ description: "Keep" }));
+    await request(app).post("/api/transactions").send(body({ description: "Drop" }));
+    expect((await request(app).delete("/api/transactions/2")).status).toBe(204);
+    const list = (await request(app).get("/api/transactions?month=2026-10")).body;
+    expect(list.map((t: { description: string }) => t.description)).toEqual(["Keep"]);
+  });
+});
+
+describe("month query edge cases", () => {
+  it.each(["?month[]=2026-10", "?month=2026-10-01", "?month=%202026-10", "?month=26-10", "?month=2026/10"])(
+    "summary answers 400 {error} for %j",
+    async (query) => {
+      const res = await request(newApp()).get(`/api/summary${query}`);
+      expect(res.status).toBe(400);
+      expect(res.body).toEqual({ error: expect.any(String) });
+    },
+  );
+
+  it("transactions answers 400 for a bracketed month array", async () => {
+    const res = await request(newApp()).get("/api/transactions?month[]=2026-10");
+    expect(res.status).toBe(400);
+  });
+
+  it("includes Feb 29 in a leap-year February list and summary", async () => {
+    const app = newApp();
+    for (const date of ["2028-01-31", "2028-02-01", "2028-02-29", "2028-03-01"]) {
+      await request(app).post("/api/transactions").send(body({ date }));
+    }
+    const list = (await request(app).get("/api/transactions?month=2028-02")).body;
+    expect(list.map((t: { date: string }) => t.date)).toEqual(["2028-02-29", "2028-02-01"]);
+    const summary = (await request(app).get("/api/summary?month=2028-02")).body;
+    expect(summary).toMatchObject({ month: "2028-02", count: 2, totalCents: 8500 });
+  });
+
+  it("handles December/January year boundaries", async () => {
+    const app = newApp();
+    for (const date of ["2026-12-31", "2027-01-01"]) await request(app).post("/api/transactions").send(body({ date }));
+    expect((await request(app).get("/api/transactions?month=2026-12")).body.map((t: { date: string }) => t.date)).toEqual(["2026-12-31"]);
+    expect((await request(app).get("/api/summary?month=2027-01")).body.count).toBe(1);
+  });
+});
+
+describe("response content types", () => {
+  it.each([
+    ["get", "/api/categories"],
+    ["get", "/api/transactions?month=2026-10"],
+    ["get", "/api/summary?month=2026-10"],
+    ["get", "/api/transactions?month=bad"],
+    ["delete", "/api/transactions/1"],
+  ] as const)("%s %s answers JSON", async (method, path) => {
+    const res = await request(newApp())[method](path);
+    expect(res.headers["content-type"]).toMatch(/application\/json/);
+  });
+
+  it("unknown nested /api path and unsupported method on /api/categories answer 404 JSON", async () => {
+    const app = newApp();
+    for (const res of [await request(app).get("/api/transactions/1/extra"), await request(app).post("/api/categories").send({})]) {
+      expect(res.status).toBe(404);
+      expect(res.headers["content-type"]).toMatch(/application\/json/);
+      expect(res.body).toEqual({ error: expect.any(String) });
+    }
+  });
+});
+
+describe("error handler", () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it("answers 413 {error} for a body over the JSON size limit", async () => {
+    const res = await request(newApp())
+      .post("/api/transactions")
+      .set("Content-Type", "application/json")
+      .send(JSON.stringify(body({ description: "x".repeat(200 * 1024) })));
+    expect(res.status).toBe(413);
+    expect(res.headers["content-type"]).toMatch(/application\/json/);
+    expect(res.body).toEqual({ error: "Request body too large" });
+  });
+
+  it("answers 415 {error} for an unsupported JSON charset", async () => {
+    const res = await request(newApp())
+      .post("/api/transactions")
+      .set("Content-Type", "application/json; charset=latin1")
+      .send(JSON.stringify(body()));
+    expect(res.status).toBe(415);
+    expect(res.body).toEqual({ error: expect.any(String) });
+  });
+
+  it("answers 500 {error} without leaking details when the database fails", async () => {
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    const db = openDb(":memory:");
+    const app = createApp(db);
+    db.close();
+    const res = await request(app).get("/api/transactions?month=2026-10");
+    expect(res.status).toBe(500);
+    expect(res.headers["content-type"]).toMatch(/application\/json/);
+    expect(res.body).toEqual({ error: "Internal server error" });
+    expect(errorSpy).toHaveBeenCalled();
+  });
+
+  const appThrowing = (err: unknown) => {
+    const app = express();
+    app.get("/boom", () => {
+      throw err;
+    });
+    app.use(apiErrorHandler);
+    return app;
+  };
+
+  it.each([
+    ["a non-object error", "plain string"],
+    ["an error with a 5xx status", Object.assign(new Error("upstream"), { status: 503 })],
+    ["an error with a non-numeric status", Object.assign(new Error("x"), { status: "400" })],
+  ])("maps %s to 500 Internal server error", async (_name, err) => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    const res = await request(appThrowing(err)).get("/boom");
+    expect(res.status).toBe(500);
+    expect(res.body).toEqual({ error: "Internal server error" });
+  });
+
+  it("keeps other 4xx statuses with a generic message", async () => {
+    const res = await request(appThrowing(Object.assign(new Error("secret detail"), { status: 403 }))).get("/boom");
+    expect(res.status).toBe(403);
+    expect(res.body).toEqual({ error: "Bad request" });
   });
 });
