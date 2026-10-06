@@ -3,6 +3,9 @@ import * as api from "./api";
 import App from "./App";
 import type { DeleteDialogProps } from "./DeleteDialog";
 import type { ExpenseDialogProps } from "./ExpenseDialog";
+import type { FilterBarProps } from "./FilterBar";
+import { applyFilters, emptyFilters } from "./filters";
+import type { ReportButtonProps } from "./ReportButton";
 import type { Category, CategoryId, MonthSummary, Transaction } from "./types";
 
 vi.mock("./api", async (importOriginal) => {
@@ -30,6 +33,29 @@ vi.mock("./DeleteDialog", () => ({
     return null;
   },
 }));
+
+/** FilterBar and ReportButton stubs: capture props too, to drive filters and report errors. */
+const filterBarProps = vi.fn<(props: FilterBarProps) => void>();
+const reportButtonProps = vi.fn<(props: ReportButtonProps) => void>();
+vi.mock("./FilterBar", () => ({
+  default: (props: FilterBarProps) => {
+    filterBarProps(props);
+    return null;
+  },
+}));
+vi.mock("./ReportButton", () => ({
+  default: (props: ReportButtonProps) => {
+    reportButtonProps(props);
+    return null;
+  },
+}));
+
+/** applyFilters is still a stub; spy on it so tests can check what the dashboard passes and returns. */
+vi.mock("./filters", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("./filters")>();
+  return { ...actual, applyFilters: vi.fn(actual.applyFilters) };
+});
+const applyFiltersMock = vi.mocked(applyFilters);
 
 const categories: Category[] = [
   { id: "food", label: "Food & Groceries" },
@@ -91,6 +117,10 @@ beforeEach(() => {
   categoriesMock.mockReset();
   expenseDialogProps.mockReset();
   deleteDialogProps.mockReset();
+  filterBarProps.mockReset();
+  reportButtonProps.mockReset();
+  applyFiltersMock.mockClear();
+  applyFiltersMock.mockImplementation((txs) => txs);
   serveData();
   setUrl("");
 });
@@ -287,5 +317,159 @@ describe("dialogs", () => {
     act(() => lastProps(expenseDialogProps).onSaved(tx(9, "2026-09-30", "Bakery")));
     expect(await screen.findByText("Saved to September 2026")).toBeInTheDocument();
     await waitFor(() => expect(listMock).toHaveBeenCalledTimes(2));
+  });
+
+  it("onSaved for a different year names that year in the notice", async () => {
+    setUrl("?month=2026-01");
+    render(<App />);
+    await screen.findByText("No expenses in January 2026");
+    act(() => lastProps(expenseDialogProps).onSaved(tx(9, "2025-12-31", "New Year's Eve")));
+    expect(await screen.findByText("Saved to December 2025")).toBeInTheDocument();
+  });
+});
+
+describe("month navigation across years", () => {
+  it("Previous from January goes to December of the previous year", async () => {
+    setUrl("?month=2026-01");
+    render(<App />);
+    await screen.findByText("No expenses in January 2026");
+    act(() => screen.getByRole("button", { name: "Previous month" }).click());
+    expect(screen.getByRole("heading", { level: 1, name: "December 2025" })).toBeInTheDocument();
+    expect(window.location.search).toBe("?month=2025-12");
+    await waitFor(() => expect(listMock).toHaveBeenLastCalledWith("2025-12"));
+  });
+
+  it("Next from December goes to January of the next year", async () => {
+    setUrl("?month=2026-12");
+    render(<App />);
+    await screen.findByText("No expenses in December 2026");
+    act(() => screen.getByRole("button", { name: "Next month" }).click());
+    expect(screen.getByRole("heading", { level: 1, name: "January 2027" })).toBeInTheDocument();
+    expect(window.location.search).toBe("?month=2027-01");
+    await waitFor(() => expect(listMock).toHaveBeenLastCalledWith("2027-01"));
+  });
+
+  it("Today is enabled on another month and returns to the current month", async () => {
+    setUrl("?month=2025-03");
+    render(<App />);
+    await screen.findByText("No expenses in March 2025");
+    const today = screen.getByRole("button", { name: "Today" });
+    expect(today).toBeEnabled();
+    act(() => today.click());
+    expect(screen.getByRole("heading", { level: 1, name: "October 2026" })).toBeInTheDocument();
+    expect(window.location.search).toBe("?month=2026-10");
+  });
+
+  it("keeps other query params when changing the month", async () => {
+    setUrl("?theme=dark&month=2026-10");
+    await renderLoaded();
+    act(() => screen.getByRole("button", { name: "Previous month" }).click());
+    const params = new URLSearchParams(window.location.search);
+    expect(params.getAll("month")).toEqual(["2026-09"]);
+    expect(params.get("theme")).toBe("dark");
+  });
+});
+
+describe("reloading", () => {
+  it("keeps the list and total visible (no skeleton) while the month reloads", async () => {
+    await renderLoaded();
+    let resolveReload: (txs: Transaction[]) => void = () => {};
+    listMock.mockImplementationOnce(() => new Promise((resolve) => (resolveReload = resolve)));
+
+    act(() => lastProps(deleteDialogProps).onDeleted());
+    await waitFor(() => expect(listMock).toHaveBeenCalledTimes(2));
+    expect(screen.getByText("Groceries")).toBeInTheDocument();
+    expect(screen.getByRole("region", { name: "Spent this month" })).toBeInTheDocument();
+    expect(screen.queryByRole("status", { name: "Loading expenses" })).not.toBeInTheDocument();
+    expect(screen.queryByTestId("summary-skeleton")).not.toBeInTheDocument();
+    expect(screen.getByRole("main")).toHaveAttribute("aria-busy", "true");
+
+    await act(async () => resolveReload([october[1]]));
+    expect(screen.queryByText("Groceries")).not.toBeInTheDocument();
+    expect(screen.getByText("Train ticket")).toBeInTheDocument();
+    expect(screen.getByRole("main")).toHaveAttribute("aria-busy", "false");
+  });
+
+  it("keeps the loaded month visible and shows the error banner when a reload fails", async () => {
+    await renderLoaded();
+    summaryMock.mockRejectedValueOnce(new api.ApiError(500, "Server error"));
+
+    act(() => lastProps(deleteDialogProps).onDeleted());
+    const banner = await screen.findByRole("alert");
+    expect(banner).toHaveTextContent("Server error");
+    expect(screen.getByText("Groceries")).toBeInTheDocument();
+    expect(screen.getByRole("region", { name: "Spent this month" })).toHaveTextContent(/62,40\s€/);
+
+    act(() => within(banner).getByRole("button", { name: "Retry" }).click());
+    await waitFor(() => expect(screen.queryByRole("alert")).not.toBeInTheDocument());
+    expect(screen.getByText("Groceries")).toBeInTheDocument();
+  });
+
+  it("does not show the previous month's rows when the next month fails to load", async () => {
+    await renderLoaded();
+    listMock.mockRejectedValueOnce(new api.ApiError(0, "Can't reach the server"));
+    act(() => screen.getByRole("button", { name: "Previous month" }).click());
+    expect(await screen.findByRole("alert")).toHaveTextContent("Can't reach the server");
+    expect(screen.queryByText("Groceries")).not.toBeInTheDocument();
+    expect(screen.queryByRole("region", { name: "Spent this month" })).not.toBeInTheDocument();
+  });
+});
+
+describe("filters wiring", () => {
+  it("passes the categories and empty filters to FilterBar", async () => {
+    await renderLoaded();
+    expect(lastProps(filterBarProps)).toMatchObject({ categories, filters: emptyFilters });
+  });
+
+  it("gives the list applyFilters(transactions, filters) and keeps the total unfiltered", async () => {
+    await renderLoaded();
+    applyFiltersMock.mockImplementation((txs, f) => txs.filter((t) => t.description.includes(f.query)));
+
+    act(() => lastProps(filterBarProps).onChange({ query: "Train", category: "" }));
+    expect(applyFiltersMock).toHaveBeenLastCalledWith(october, { query: "Train", category: "" });
+    expect(screen.queryByText("Groceries")).not.toBeInTheDocument();
+    expect(screen.getByText("Train ticket")).toBeInTheDocument();
+    expect(screen.getByRole("region", { name: "Spent this month" })).toHaveTextContent(/62,40\s€/);
+    expect(lastProps(filterBarProps).filters).toEqual({ query: "Train", category: "" });
+  });
+
+  it.each([
+    ["a search query", { query: "zzz", category: "" }],
+    ["a category", { query: "", category: "transport" }],
+  ])("shows the no-matches state when %s filters out every row; Clear filters resets", async (_, filters) => {
+    await renderLoaded();
+    applyFiltersMock.mockImplementation((txs, f) => (f.query || f.category ? [] : txs));
+
+    act(() => lastProps(filterBarProps).onChange(filters));
+    expect(screen.getByText("No expenses match your filters")).toBeInTheDocument();
+    expect(screen.queryByText(/^No expenses in/)).not.toBeInTheDocument();
+
+    act(() => screen.getByRole("button", { name: "Clear filters" }).click());
+    expect(lastProps(filterBarProps).filters).toEqual(emptyFilters);
+    expect(screen.getByText("Groceries")).toBeInTheDocument();
+  });
+
+  it("treats a whitespace-only query as no filter (empty month state, not no-matches)", async () => {
+    setUrl("?month=2026-01");
+    render(<App />);
+    await screen.findByText("No expenses in January 2026");
+    act(() => lastProps(filterBarProps).onChange({ query: "   ", category: "" }));
+    expect(screen.getByText("No expenses in January 2026")).toBeInTheDocument();
+    expect(screen.queryByText("No expenses match your filters")).not.toBeInTheDocument();
+  });
+});
+
+describe("report button wiring", () => {
+  it("passes the month and turns onError into an error notice", async () => {
+    await renderLoaded();
+    expect(lastProps(reportButtonProps).month).toBe("2026-10");
+
+    act(() => screen.getByRole("button", { name: "Previous month" }).click());
+    expect(lastProps(reportButtonProps).month).toBe("2026-09");
+
+    act(() => lastProps(reportButtonProps).onError("Couldn't download the PDF"));
+    const alert = await screen.findByRole("alert");
+    expect(alert).toHaveTextContent("Couldn't download the PDF");
+    expect(alert).toHaveClass("notice--error");
   });
 });
