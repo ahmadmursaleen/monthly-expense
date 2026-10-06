@@ -15,7 +15,7 @@ export function createApp(db: DatabaseSync) {
 
   app.use("/api", createApiRouter(db));
   app.use("/api", createReportRouter(db));
-  // Further API routers (e.g. the PDF report) go above this line: the 404 catch-all must stay last.
+  // Further API routers go above this line: the 404 catch-all must stay last.
   app.use("/api", apiNotFound);
   app.use(apiErrorHandler);
 
