@@ -176,5 +176,5 @@ Shell rules (headless agents: anything not allowed in `.claude/settings.json` is
   `>`/`>>` redirects or `tee` to write files: they are denied.
 - Run git from the current directory (the repo root). Never `cd <dir> && git ...`: it is denied.
 - Never put non-ASCII whitespace (e.g. the U+202F / U+00A0 that `Intl` emits) into a shell command: it
-  is denied. Put such characters into files with Edit/Write, or use ` ` escapes in code.
+  is denied. Put such characters into files with Edit/Write, or use `\u202f` escapes in code.
 - Temporary files go nowhere: read with `cat`/`grep`/`head`/`tail`, edit with Edit.
