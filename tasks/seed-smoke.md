@@ -4,7 +4,7 @@ status: in_progress
 owner: sisterPC/agent-1
 deps: [pdf-report]
 prio: 2
-lease_until: 2026-10-06T11:59:31Z
+lease_until: 2026-10-06T12:02:36Z
 releases: 0
 extended: 
 ---
