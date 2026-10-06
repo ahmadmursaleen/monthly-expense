@@ -63,6 +63,68 @@ it("closes on Escape", () => {
   expect(props.onClose).toHaveBeenCalledTimes(1);
 });
 
+it("closes on the native cancel event (browser Escape)", () => {
+  const { props } = setup();
+  const event = new Event("cancel", { cancelable: true });
+  screen.getByRole("dialog").dispatchEvent(event);
+  expect(props.onClose).toHaveBeenCalledTimes(1);
+  expect(event.defaultPrevented).toBe(true);
+  expect(deleteTransaction).not.toHaveBeenCalled();
+});
+
+it("formats larger amounts with grouping in the question", () => {
+  setup({ transaction: { ...row, description: "Rent", amountCents: 123456 } });
+  expect(screen.getByRole("dialog")).toHaveAccessibleName(/^Delete “Rent” \(1\.234,56\s€\)\?$/);
+});
+
+it("renders HTML in the description as plain text", () => {
+  setup({ transaction: { ...row, description: "<b>Tea</b>" } });
+  const dialog = screen.getByRole("dialog");
+  expect(dialog).toHaveTextContent("Delete “<b>Tea</b>”");
+  expect(dialog.querySelector("b")).toBeNull();
+});
+
+it("deletes only once when Delete is clicked repeatedly", () => {
+  vi.mocked(deleteTransaction).mockReturnValue(new Promise(() => {}));
+  setup();
+  const button = screen.getByRole("button", { name: "Delete" });
+  fireEvent.click(button);
+  fireEvent.click(button);
+  expect(deleteTransaction).toHaveBeenCalledTimes(1);
+});
+
+it("falls back to a generic message for a non-Error rejection", async () => {
+  vi.mocked(deleteTransaction).mockRejectedValue("boom");
+  setup();
+  fireEvent.click(screen.getByRole("button", { name: "Delete" }));
+  expect(await screen.findByRole("alert")).toHaveTextContent("Deleting failed");
+});
+
+it("clears the error and succeeds on retry", async () => {
+  vi.mocked(deleteTransaction)
+    .mockRejectedValueOnce(new ApiError(0, "Can't reach the server"))
+    .mockResolvedValueOnce();
+  const { props } = setup();
+  fireEvent.click(screen.getByRole("button", { name: "Delete" }));
+  expect(await screen.findByRole("alert")).toHaveTextContent("Can't reach the server");
+  fireEvent.click(screen.getByRole("button", { name: "Delete" }));
+  expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+  await vi.waitFor(() => expect(props.onDeleted).toHaveBeenCalledTimes(1));
+  expect(deleteTransaction).toHaveBeenCalledTimes(2);
+});
+
+it("returns focus to the opener when it closes", () => {
+  const opener = document.createElement("button");
+  document.body.append(opener);
+  opener.focus();
+  const { props, rerender } = setup();
+  expect(screen.getByRole("button", { name: "Cancel" })).toHaveFocus();
+  rerender(<DeleteDialog {...props} transaction={null} />);
+  expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  expect(opener).toHaveFocus();
+  opener.remove();
+});
+
 it("shows the error and stays open when the delete fails", async () => {
   vi.mocked(deleteTransaction).mockRejectedValue(new ApiError(404, "Transaction not found"));
   const { props } = setup();
