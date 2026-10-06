@@ -61,7 +61,8 @@ function DeleteConfirm({ transaction, onClose, onDeleted }: DeleteConfirmProps) 
         <button type="button" className="btn" onClick={onClose} data-autofocus>
           Cancel
         </button>
-        <button type="button" className="btn btn-danger" onClick={handleDelete} disabled={deleting}>
+        {/* aria-disabled, not disabled, so keyboard focus stays on it while deleting (see UI-DESIGN.md). */}
+        <button type="button" className="btn btn-danger" onClick={handleDelete} aria-disabled={deleting}>
           {deleting ? "Deleting…" : "Delete"}
         </button>
       </div>

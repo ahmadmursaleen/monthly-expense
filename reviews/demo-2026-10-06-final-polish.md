@@ -6,7 +6,7 @@ parts (layout, keyboard path) were checked by CSS/code review and component test
 
 | # | Step | Command / check | Result |
 |---|---|---|---|
-| 1 | Install | `npm install` | PASS: up to date |
+| 1 | Install | `npm install` | PASS: up to date. Run on the agent's existing checkout, not on a fresh clone as SPEC §1.5 / §2 step 1 describe |
 | 2 | Seed | `npm run seed -w backend` | PASS: "inserted 50", months 2026-08, 2026-09, 2026-10 (up to 2026-10-06) |
 | 3 | Backend | `npm run start -w backend`, `GET /api/health` | PASS: `{"ok":true}` |
 | 4 | Frontend build | `npm run build -w frontend` | PASS: built in 0.5 s, JS 238 kB (74 kB gzip), CSS 14 kB, fonts self-hosted |
@@ -25,9 +25,9 @@ parts (layout, keyboard path) were checked by CSS/code review and component test
 | 17 | Backend down (demo 9) | stop backend, `GET /api/summary` via the preview proxy | PASS: 502 with no JSON body, which `api.ts` maps to "Can't reach the server" (ErrorBanner + Retry, covered by `api.test.ts` / `Dashboard.test.tsx`) |
 | 18 | Persistence (demo 9) | restart backend, `GET /api/summary?month=2026-10` and transactions | PASS: still 93169 cents, edited "Groceries" (4500) still first |
 | 19 | Filters (demo 6) | client-side; `filters.test.ts`, `Dashboard.test.tsx` | PASS (tests): search + category narrow the list, "No expenses match your filters" + Clear filters, summary unchanged |
-| 20 | Phone width (demo 10) | CSS review at 375 px | PASS: `@media (max-width: 719px)` in every component: header nav buttons share the row, toolbar stacks with full-width buttons, list rows become two lines, summary stacks, dialog actions stack full width |
+| 20 | Phone width (demo 10) | CSS review at 375 px | PASS: `@media (max-width: 719px)` in `Dashboard.css`, `MonthHeader.css`, `FilterBar.css`, `SummaryPanel.css`, `TransactionList.css`, `ExpenseDialog.css` and `DeleteDialog.css` (none in `CategoryBars.css`, `ErrorBanner.css`, `Notice.css`, `ReportButton.css`): header nav buttons share the row, toolbar stacks with full-width buttons, list rows become two lines, summary stacks, dialog actions stack full width |
 | 21 | Desktop 1280 px | CSS review | PASS: page capped at `--page-width` (60rem) and centered; summary two columns; toolbar fields left, actions right |
-| 22 | Keyboard path | code review + tests | PASS after fixes: Tab order header nav → search → category → (Clear) → Download PDF → Add expense → row Edit/Delete; dialogs focus the first field, trap focus, Escape closes and focus returns. Fixed in this task: focus was lost after pressing Today (button became `disabled`) and after deleting a row (its button disappeared) |
-| 23 | Contrast | token review vs WCAG AA | PASS: text tokens >= 4.5:1 on `--paper`/`--surface` (e.g. `--ink-faint` ~4.8:1 on paper), white on `--action` ~8:1, `--danger` on `--danger-tint` ~5.7:1, control borders >= 3:1 |
+| 22 | Keyboard path | code review + tests | PASS after fixes: Tab order header nav → search → category → (Clear) → Download PDF → Add expense → row Edit/Delete; dialogs focus the first field, trap focus, Escape closes and focus returns. Fixed in this task: focus was lost after pressing Today (button became `disabled`) and after deleting a row (its button disappeared). Fixed after code review (CR-1/CR-2, see `fixes-agent-1-final-polish.md`): Retry, the empty state's "Clear filters", and the empty state's "Add expense" (after a save fills the list) no longer drop focus to `<body>`, focus moves to the Expenses section instead; "Download PDF" while generating and the dialog's "Delete" while deleting use `aria-disabled` instead of `disabled`, so focus stays on them. Covered by `Dashboard.test.tsx`, `Dashboard.focus.test.tsx`, `ReportButton.test.tsx`, `DeleteDialog.test.tsx` |
+| 23 | Contrast | token review vs WCAG AA | PASS: text tokens >= 4.5:1 on `--paper`/`--surface` (e.g. `--ink-faint` ~4.8:1 on paper), white on `--action` ~8:1, `--danger` on `--danger-tint` ~5.3:1, control borders >= 3:1 |
 
 Result: all steps PASS. Servers were stopped after the run.

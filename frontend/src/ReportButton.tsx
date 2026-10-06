@@ -27,6 +27,7 @@ export default function ReportButton({ month, onError }: ReportButtonProps) {
   const [busy, setBusy] = useState(false);
 
   async function handleClick() {
+    if (busy) return;
     setBusy(true);
     try {
       const { blob } = await downloadReport(month);
@@ -38,8 +39,15 @@ export default function ReportButton({ month, onError }: ReportButtonProps) {
     }
   }
 
+  // aria-disabled, not disabled: a disabled button drops keyboard focus right after it is pressed.
   return (
-    <button type="button" className="btn report-button" disabled={busy} aria-busy={busy} onClick={handleClick}>
+    <button
+      type="button"
+      className="btn report-button"
+      aria-disabled={busy}
+      aria-busy={busy}
+      onClick={handleClick}
+    >
       {busy ? "Generating…" : "Download PDF"}
     </button>
   );

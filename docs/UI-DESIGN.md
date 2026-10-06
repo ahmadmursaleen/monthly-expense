@@ -58,10 +58,13 @@ the bars stay readable in black and white. All text colors pass WCAG AA on `--pa
 - **Buttons** (global classes in `styles.css`): `.btn` (outlined, default), `.btn-primary` (ink-blue
   fill, one per area: "Add expense", dialog submit), `.btn-danger` (confirm delete), `.btn-quiet`
   (text button, e.g. row Edit/Delete). Min height 40 px (32 px for quiet). A button that can become
-  unavailable right after it is pressed (Today) uses `aria-disabled="true"` instead of `disabled`, so
+  unavailable right after it is pressed (Today, "Download PDF" while generating, the dialog's "Delete"
+  while deleting) uses `aria-disabled="true"` instead of `disabled` and ignores clicks while so, so
   keyboard focus stays on it.
 - **Focus after delete:** the deleted row's button disappears, so the dashboard moves focus to the
-  expense list section (`tabIndex=-1`).
+  expense list section (`tabIndex=-1`). The same target is used when Retry or the empty state's
+  "Clear filters" is pressed, and after a save when the reload removed the button focus returned to
+  (e.g. the empty state's "Add expense").
 - **Inputs** (for `fe-form` / `fe-filters-report`): 40 px high, `--surface` background,
   `1px solid var(--control-border)` (never `--rule`/`--rule-strong`: too faint for a field boundary), `--radius-md`, a visible label above, and the error text in `--danger`
   below the field with `aria-describedby`.

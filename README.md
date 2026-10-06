@@ -85,9 +85,9 @@ Add expense and each row's Edit / Delete; dialogs trap focus and close with Esca
 
 ```
 backend/      Express 5 + TypeScript API, SQLite via node:sqlite, PDF report with pdfkit
-  src/server.ts            entry point (PORT, DB_PATH)
+  src/server.ts            entry point (PORT)
   src/app.ts               createApp(db): the Express app, used by tests with supertest
-  src/db.ts                openDb(): the only module that opens SQLite, runs the schema
+  src/db.ts                openDb(): the only module that opens SQLite, runs the schema (DB_PATH)
   src/domain.ts            categories, validation, month helpers
   src/transactions.repo.ts SQL for transactions and summaries
   src/routes/              HTTP routers: api.ts (transactions, summary, categories), report.ts (PDF)
@@ -104,7 +104,7 @@ tasks/        Taskflow task board (`python tasks.py`, see AGENTS.md)
 reviews/      test, review and fix reports of every task, plus demo runs
 ```
 
-Each source file has its test next to it (`foo.ts` + `foo.test.ts`).
+Tests live next to the code they cover (`foo.ts` + `foo.test.ts`).
 
 ## How it was built
 

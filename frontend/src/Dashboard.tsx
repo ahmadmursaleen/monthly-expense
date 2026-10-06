@@ -25,6 +25,7 @@ export default function Dashboard() {
   const [editor, setEditor] = useState<EditorState>({ open: false });
   const [deleting, setDeleting] = useState<Transaction | null>(null);
   const focusListAfterDelete = useRef(false);
+  const focusListIfLostAfterReload = useRef(false);
   const listRef = useRef<HTMLElement>(null);
   const notify = useNotify();
 
@@ -33,6 +34,7 @@ export default function Dashboard() {
   const hasData = summary !== null;
 
   function handleSaved(tx: Transaction) {
+    focusListIfLostAfterReload.current = true;
     setEditor({ open: false });
     reload();
     const savedMonth = monthOf(tx.date);
@@ -45,6 +47,18 @@ export default function Dashboard() {
     reload();
   }
 
+  // Retry and the empty state's Clear filters unmount themselves when pressed; move keyboard focus to
+  // the list section first so it does not drop to <body>.
+  function handleRetry() {
+    listRef.current?.focus();
+    reload();
+  }
+
+  function handleClearFilters() {
+    listRef.current?.focus();
+    setFilters(emptyFilters);
+  }
+
   // The deleted row's Delete button (the dialog's opener) disappears with the reload, which would drop
   // keyboard focus to <body>. Runs after the dialog's unmount cleanup, so it overrides the focus return.
   useEffect(() => {
@@ -52,6 +66,15 @@ export default function Dashboard() {
     focusListAfterDelete.current = false;
     listRef.current?.focus();
   }, [deleting]);
+
+  // After a save the dialog returns focus to its opener, but the reload can then remove that opener (the
+  // empty state's Add expense, or an edited row that moved to another month). Only if focus was lost.
+  useEffect(() => {
+    if (loading || !focusListIfLostAfterReload.current) return;
+    focusListIfLostAfterReload.current = false;
+    const active = document.activeElement;
+    if (active === null || active === document.body) listRef.current?.focus();
+  }, [loading]);
 
   return (
     <div className="dashboard">
@@ -64,7 +87,7 @@ export default function Dashboard() {
       />
 
       <main className="dashboard__main" aria-busy={loading}>
-        {error !== null && <ErrorBanner message={error} onRetry={reload} />}
+        {error !== null && <ErrorBanner message={error} onRetry={handleRetry} />}
 
         {summary !== null ? (
           <SummaryPanel summary={summary} categories={categories} />
@@ -86,7 +109,7 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Focus target after a delete (see handleDeleted); not in the tab order. */}
+        {/* Focus target when the focused control disappears (delete, Retry, Clear filters, save); not in the tab order. */}
         <section ref={listRef} className="dashboard__list" aria-label="Expenses" tabIndex={-1}>
           {hasData ? (
             <TransactionList
@@ -97,7 +120,7 @@ export default function Dashboard() {
               onEdit={(tx) => setEditor({ open: true, transaction: tx })}
               onDelete={setDeleting}
               onAdd={() => setEditor({ open: true, transaction: null })}
-              onClearFilters={() => setFilters(emptyFilters)}
+              onClearFilters={handleClearFilters}
             />
           ) : (
             loading && (

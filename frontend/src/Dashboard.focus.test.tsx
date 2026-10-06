@@ -15,6 +15,7 @@ vi.mock("./api", async (importOriginal) => {
     listTransactions: vi.fn(),
     getSummary: vi.fn(),
     deleteTransaction: vi.fn(),
+    createTransaction: vi.fn(),
   };
 });
 
@@ -127,6 +128,35 @@ it("keeps focus in the dialog when the delete fails, then cancel returns it to t
 
   fireEvent.click(within(dialog).getByRole("button", { name: "Cancel" }));
   expect(opener).toHaveFocus();
+});
+
+it("moves focus to the Expenses section when a save from the empty month's Add expense fills the list", async () => {
+  rows = [];
+  const createMock = vi.mocked(api.createTransaction);
+  createMock.mockReset();
+  createMock.mockImplementation((input) => {
+    const saved = { ...tx(10, input.date, input.description, input.amountCents), category: input.category };
+    rows = [saved];
+    return Promise.resolve(saved);
+  });
+  render(<App />);
+  await screen.findByText("No expenses in October 2026");
+  const section = screen.getByRole("region", { name: "Expenses" });
+  const emptyAdd = within(section).getByRole("button", { name: "Add expense" });
+  emptyAdd.focus();
+  act(() => emptyAdd.click());
+
+  const dialog = screen.getByRole("dialog");
+  fireEvent.change(within(dialog).getByLabelText("Description"), { target: { value: "Bakery" } });
+  fireEvent.change(within(dialog).getByLabelText("Amount"), { target: { value: "3,80" } });
+  fireEvent.change(within(dialog).getByLabelText("Category"), { target: { value: "food" } });
+  fireEvent.click(within(dialog).getByRole("button", { name: "Add expense" }));
+
+  expect(await screen.findByText("Bakery")).toBeInTheDocument();
+  expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  expect(emptyAdd).not.toBeInTheDocument();
+  expect(section).toHaveFocus();
+  expect(document.body).not.toHaveFocus();
 });
 
 it("a cancel after an earlier successful delete still returns focus to the row", async () => {

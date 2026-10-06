@@ -153,6 +153,11 @@ textarea {
   background: var(--danger-hover);
 }
 
+.btn-danger[aria-disabled="true"]:hover {
+  border-color: var(--danger);
+  background: var(--danger);
+}
+
 /* Quiet text buttons, e.g. Edit / Delete on a row. */
 .btn-quiet {
   min-height: 2rem;

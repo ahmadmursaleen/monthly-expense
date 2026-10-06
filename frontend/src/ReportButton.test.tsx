@@ -42,17 +42,24 @@ it("downloads the month's PDF as expenses-YYYY-MM.pdf via an object URL", async 
   expect(onError).not.toHaveBeenCalled();
 });
 
-it("shows Generating… and is disabled while busy", async () => {
+it("shows Generating… and is aria-disabled (not disabled) while busy, keeping keyboard focus", async () => {
   let resolve!: (v: { blob: Blob; filename: string }) => void;
   downloadReport.mockReturnValue(new Promise((r) => (resolve = r)));
   render(<ReportButton month="2026-10" onError={vi.fn()} />);
 
-  fireEvent.click(screen.getByRole("button", { name: "Download PDF" }));
+  const button = screen.getByRole("button", { name: "Download PDF" });
+  expect(button).toHaveAttribute("aria-disabled", "false");
+  button.focus();
+  fireEvent.click(button);
   const busy = await screen.findByRole("button", { name: "Generating…" });
-  expect(busy).toBeDisabled();
+  expect(busy).toHaveAttribute("aria-disabled", "true");
+  expect(busy).toBeEnabled();
+  expect(busy).toHaveFocus();
 
   resolve({ blob: new Blob(["%PDF"]), filename: "expenses-2026-10.pdf" });
-  expect(await screen.findByRole("button", { name: "Download PDF" })).toBeEnabled();
+  const idle = await screen.findByRole("button", { name: "Download PDF" });
+  expect(idle).toHaveAttribute("aria-disabled", "false");
+  expect(idle).toHaveFocus();
 });
 
 it("names the file after the month it was given", async () => {

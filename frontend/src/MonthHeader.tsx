@@ -3,7 +3,7 @@ import "./MonthHeader.css";
 
 export interface MonthHeaderProps {
   month: string;
-  /** True when `month` is the current month (Today is then disabled). */
+  /** True when `month` is the current month (Today is then aria-disabled: still focusable, clicks do nothing). */
   isCurrent: boolean;
   onPrevious: () => void;
   onToday: () => void;

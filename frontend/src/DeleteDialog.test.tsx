@@ -46,9 +46,31 @@ it("deletes on confirm and calls onDeleted", async () => {
   const { props } = setup();
   fireEvent.click(screen.getByRole("button", { name: "Delete" }));
   expect(deleteTransaction).toHaveBeenCalledWith(7);
-  expect(screen.getByRole("button", { name: "Deleting…" })).toBeDisabled();
+  expect(screen.getByRole("button", { name: "Deleting…" })).toHaveAttribute("aria-disabled", "true");
   await vi.waitFor(() => expect(props.onDeleted).toHaveBeenCalledTimes(1));
   expect(props.onClose).not.toHaveBeenCalled();
+});
+
+it("keeps focus on Delete while deleting (aria-disabled, not disabled) and ignores further clicks", async () => {
+  let reject!: (err: Error) => void;
+  vi.mocked(deleteTransaction).mockReturnValue(new Promise((_, r) => (reject = r)));
+  setup();
+  const button = screen.getByRole("button", { name: "Delete" });
+  expect(button).toHaveAttribute("aria-disabled", "false");
+  button.focus();
+  fireEvent.click(button);
+
+  const busy = screen.getByRole("button", { name: "Deleting…" });
+  expect(busy).toBeEnabled();
+  expect(busy).toHaveFocus();
+  fireEvent.click(busy);
+  expect(deleteTransaction).toHaveBeenCalledTimes(1);
+
+  reject(new ApiError(500, "Server error"));
+  expect(await screen.findByRole("alert")).toHaveTextContent("Server error");
+  const again = screen.getByRole("button", { name: "Delete" });
+  expect(again).toHaveAttribute("aria-disabled", "false");
+  expect(again).toHaveFocus();
 });
 
 it("cancels without deleting", () => {

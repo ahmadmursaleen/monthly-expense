@@ -50,7 +50,7 @@ vi.mock("./ReportButton", () => ({
   },
 }));
 
-/** applyFilters is still a stub; spy on it so tests can check what the dashboard passes and returns. */
+/** Spy on the real applyFilters so tests can check what the dashboard passes and control what it returns. */
 vi.mock("./filters", async (importOriginal) => {
   const actual = await importOriginal<typeof import("./filters")>();
   return { ...actual, applyFilters: vi.fn(actual.applyFilters) };
@@ -225,6 +225,19 @@ describe("loading and errors", () => {
     expect(listMock).toHaveBeenCalledTimes(2);
   });
 
+  it("moves keyboard focus to the Expenses section when Retry is pressed (the banner unmounts)", async () => {
+    listMock.mockRejectedValueOnce(new api.ApiError(0, "Can't reach the server"));
+    render(<App />);
+    const retry = within(await screen.findByRole("alert")).getByRole("button", { name: "Retry" });
+    retry.focus();
+
+    act(() => retry.click());
+    expect(retry).not.toBeInTheDocument();
+    expect(screen.getByRole("region", { name: "Expenses" })).toHaveFocus();
+    expect(await screen.findByText("Groceries")).toBeInTheDocument();
+    expect(screen.getByRole("region", { name: "Expenses" })).toHaveFocus();
+  });
+
   it("ignores a late response for a month that is no longer selected", async () => {
     let resolveOctober: (txs: Transaction[]) => void = () => {};
     listMock.mockImplementationOnce(() => new Promise((resolve) => (resolveOctober = resolve)));
@@ -336,6 +349,41 @@ describe("dialogs", () => {
     expect(lastProps(expenseDialogProps).open).toBe(false);
     await waitFor(() => expect(summaryMock).toHaveBeenCalledTimes(2));
     expect(screen.queryByText(/^Saved to/)).not.toBeInTheDocument();
+  });
+
+  it("moves focus to the Expenses section when a save replaces the empty state's Add button", async () => {
+    setUrl("?month=2026-01");
+    render(<App />);
+    await screen.findByText("No expenses in January 2026");
+    const emptyAdd = within(screen.getByRole("region", { name: "Expenses" })).getByRole("button", {
+      name: "Add expense",
+    });
+    emptyAdd.focus();
+    act(() => emptyAdd.click());
+
+    const saved = tx(9, "2026-01-10", "Bakery");
+    listMock.mockImplementation((month) => Promise.resolve(month === "2026-01" ? [saved] : (data[month] ?? [])));
+    summaryMock.mockImplementation((month) =>
+      Promise.resolve(summaryOf(month, month === "2026-01" ? [saved] : (data[month] ?? []))),
+    );
+    act(() => lastProps(expenseDialogProps).onSaved(saved));
+    // The opener stays until the reload has finished.
+    expect(emptyAdd).toHaveFocus();
+
+    expect(await screen.findByText("Bakery")).toBeInTheDocument();
+    expect(emptyAdd).not.toBeInTheDocument();
+    expect(screen.getByRole("region", { name: "Expenses" })).toHaveFocus();
+  });
+
+  it("leaves focus on the toolbar's Add expense after a save (it stays mounted)", async () => {
+    await renderLoaded();
+    const add = screen.getByRole("button", { name: "Add expense" });
+    add.focus();
+    act(() => add.click());
+    act(() => lastProps(expenseDialogProps).onSaved(tx(9, "2026-10-01", "Bakery")));
+    await waitFor(() => expect(listMock).toHaveBeenCalledTimes(2));
+    await waitFor(() => expect(screen.getByRole("main")).toHaveAttribute("aria-busy", "false"));
+    expect(add).toHaveFocus();
   });
 
   it("onSaved in another month notifies where it went", async () => {
@@ -504,9 +552,14 @@ describe("filters wiring", () => {
     expect(screen.getByText("No expenses match your filters")).toBeInTheDocument();
     expect(screen.queryByText(/^No expenses in/)).not.toBeInTheDocument();
 
-    act(() => screen.getByRole("button", { name: "Clear filters" }).click());
+    const clear = screen.getByRole("button", { name: "Clear filters" });
+    clear.focus();
+    act(() => clear.click());
     expect(lastProps(filterBarProps).filters).toEqual(emptyFilters);
     expect(screen.getByText("Groceries")).toBeInTheDocument();
+    // Clear filters unmounts itself; keyboard focus moves to the list section, not <body>.
+    expect(clear).not.toBeInTheDocument();
+    expect(screen.getByRole("region", { name: "Expenses" })).toHaveFocus();
   });
 
   it("treats a whitespace-only query as no filter (empty month state, not no-matches)", async () => {
