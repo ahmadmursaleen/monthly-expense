@@ -19,7 +19,7 @@ One npm workspace: a single `npm install` at the root installs both parts.
 
 | Part | Runtime / libraries | Tests |
 |---|---|---|
-| backend | Node 22.13+, Express 5, `node:sqlite` (built into Node, no native build), run with `tsx` | Vitest + supertest |
+| backend | Node 22.13+, Express 5, `node:sqlite` (built into Node, no native build), pdfkit (PDF report), run with `tsx` | Vitest + supertest |
 | frontend | React 19, Vite 8, plain CSS | Vitest + jsdom + Testing Library |
 | tooling | TypeScript 6.0 (strict; pinned below 6.1 for typescript-eslint), ESLint 10 flat config at the root | |
 

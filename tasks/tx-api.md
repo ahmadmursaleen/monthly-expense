@@ -1,0 +1,25 @@
+---
+title: REST endpoints: categories, transactions, monthly summary
+status: todo
+owner:
+deps: [data-model]
+prio: 1
+---
+## Goal
+Implement the JSON part of the API contract (SPEC §6) on top of the repository.
+
+## Acceptance criteria
+- [ ] `GET /api/categories`, `GET /api/transactions?month=`, `POST /api/transactions`,
+      `PUT /api/transactions/:id`, `DELETE /api/transactions/:id`, `GET /api/summary?month=` with exactly
+      the status codes, shapes and error format of SPEC §6
+- [ ] Router module(s) under `backend/src/routes/`, mounted in `createApp(db)`. Non-numeric `:id` → 404;
+      malformed JSON body → 400 `{error}`; unknown `/api/*` path → 404 JSON
+- [ ] supertest tests: each endpoint's happy path and at least one error; a create → list → update →
+      summary → delete round trip; month boundaries in list and summary
+- [ ] `docs/ARCHITECTURE.md` API table lists the full contract (incl. the PDF endpoint, marked as
+      provided by `pdf-report`)
+- [ ] Quality gate per AGENTS.md: `reviews/tests-*-tx-api.md` and `reviews/review-*-tx-api.md` (plus `reviews/fixes-*-tx-api.md` if findings were fixed) are committed with the task
+- [ ] `.taskcheck` passes
+
+## Notes
+Do not add npm dependencies (avoids package-lock conflicts with parallel tasks).
