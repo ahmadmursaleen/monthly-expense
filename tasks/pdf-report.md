@@ -1,9 +1,10 @@
 ---
 title: Monthly PDF report endpoint
-status: todo
-owner:
+status: in_progress
+owner: R1427WW10P/agent-1
 deps: [tx-api]
 prio: 1
+lease_until: 2026-10-06T09:15:07Z
 ---
 ## Goal
 `GET /api/reports/YYYY-MM.pdf` per SPEC §6 and §7: a printable report of the complete month.
