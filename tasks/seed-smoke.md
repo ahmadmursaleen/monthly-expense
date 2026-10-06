@@ -1,10 +1,12 @@
 ---
 title: Seed script and end-to-end API smoke test
-status: in_progress
-owner: R1427WW10P/agent-2
+status: todo
+owner: 
 deps: [pdf-report]
 prio: 2
-lease_until: 2026-10-06T09:36:11Z
+lease_until: 
+releases: 0
+extended: 
 ---
 ## Goal
 Make the demo look alive (SPEC S1) and prove the whole backend flow against a real server (SPEC S2).
@@ -24,3 +26,4 @@ Make the demo look alive (SPEC S1) and prove the whole backend flow against a re
 ## Notes
 Backend only. Do not add npm dependencies (avoids package-lock conflicts with parallel tasks).
 - ASSUMPTION (2026-10-06 11:18+0200 by R1427WW10P/agent-2): generateSeed takes today as a YYYY-MM-DD string (CLI passes the local date), is deterministic per day, puts every category in every month, and never dates current-month expenses after today
+- release by R1427WW10P/agent-2: handed off by R1427WW10P/agent-2: You've hit your session limit · resets 3:10pm (Europe/Berlin)
