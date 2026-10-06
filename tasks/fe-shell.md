@@ -4,7 +4,7 @@ status: in_progress
 owner: R1427WW10P/agent-2
 deps: [fe-foundation]
 prio: 1
-lease_until: 2026-10-06T09:05:28Z
+lease_until: 2026-10-06T09:10:27Z
 ---
 ## Goal
 The first UI task: set the visual direction with frontend-design and build the dashboard frame
