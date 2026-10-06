@@ -100,6 +100,36 @@ describe("validateTransactionInput", () => {
     });
   });
 
+  it("rejects a boolean or null amount", () => {
+    expect(validateTransactionInput({ ...valid, amountCents: true }).ok).toBe(false);
+    expect(validateTransactionInput({ ...valid, amountCents: null }).ok).toBe(false);
+  });
+
+  it.each([["2026-10-06 "], [" 2026-10-06"], ["2026-10-06\n"]])("rejects the date %j with surrounding whitespace", (date) => {
+    expect(validateTransactionInput({ ...valid, date })).toEqual({
+      ok: false,
+      fields: { date: "Enter a valid date" },
+    });
+  });
+
+  it("accepts every SPEC category id", () => {
+    for (const c of CATEGORIES) {
+      expect(validateTransactionInput({ ...valid, category: c.id }).ok).toBe(true);
+    }
+  });
+
+  it("keeps inner whitespace of the description", () => {
+    const res = validateTransactionInput({ ...valid, description: "  Rent  October " });
+    expect(res).toEqual({ ok: true, value: { ...valid, description: "Rent  October" } });
+  });
+
+  it("reports only the invalid fields when several but not all are wrong", () => {
+    expect(validateTransactionInput({ ...valid, amountCents: 0, date: "2026-02-30" })).toEqual({
+      ok: false,
+      fields: { amountCents: "Amount must be greater than zero", date: "Enter a valid date" },
+    });
+  });
+
   it("accepts 29 February in a leap year", () => {
     expect(validateTransactionInput({ ...valid, date: "2028-02-29" }).ok).toBe(true);
   });
@@ -131,6 +161,13 @@ describe("isValidDate", () => {
   it("rejects impossible dates", () => {
     expect(isValidDate("2026-04-31")).toBe(false);
   });
+  it("applies leap-year rules to years 0000-0099 too", () => {
+    expect(isValidDate("0000-02-29")).toBe(true);
+    expect(isValidDate("0004-02-29")).toBe(true);
+    expect(isValidDate("0001-02-29")).toBe(false);
+    expect(isValidDate("0100-02-29")).toBe(false);
+    expect(isValidDate("0400-02-29")).toBe(true);
+  });
 });
 
 describe("isValidMonth", () => {
@@ -154,7 +191,15 @@ describe("monthBounds", () => {
     expect(monthBounds("2028-02").last).toBe("2028-02-29");
     expect(monthBounds("2026-02").last).toBe("2026-02-28");
   });
-  it("throws on an invalid month", () => {
-    expect(() => monthBounds("2026-13")).toThrow();
+  it.each(["2026-13", "2026-00", "2026-1", "", "2026-10-01"])("throws on the invalid month %j", (m) => {
+    expect(() => monthBounds(m)).toThrow();
+  });
+  it("handles a century non-leap year and a 400-year leap year", () => {
+    expect(monthBounds("2100-02").last).toBe("2100-02-28");
+    expect(monthBounds("2000-02").last).toBe("2000-02-29");
+  });
+  it("handles February in years 0000-0099", () => {
+    expect(monthBounds("0000-02").last).toBe("0000-02-29");
+    expect(monthBounds("0001-02").last).toBe("0001-02-28");
   });
 });

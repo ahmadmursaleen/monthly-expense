@@ -77,6 +77,44 @@ describe("transactions repo CRUD", () => {
   it("enforces amount_cents > 0 in the schema", () => {
     expect(() => memoryRepo().create(input({ amountCents: 0 }))).toThrow();
   });
+
+  it("update and remove only touch the targeted row", () => {
+    const repo = memoryRepo();
+    const a = repo.create(input({ description: "Coffee" }));
+    const b = repo.create(input({ description: "Bread" }));
+    const c = repo.create(input({ description: "Milk" }));
+    repo.update(b.id, input({ description: "Rye bread" }));
+    expect(repo.remove(c.id)).toBe(true);
+    expect(repo.getById(a.id)).toEqual(a);
+    expect(repo.getById(b.id)?.description).toBe("Rye bread");
+    expect(repo.getById(c.id)).toBeNull();
+  });
+
+  it("does not reuse the id of a deleted transaction", () => {
+    const repo = memoryRepo();
+    repo.create(input());
+    const second = repo.create(input());
+    repo.remove(second.id);
+    expect(repo.create(input()).id).toBeGreaterThan(second.id);
+  });
+
+  it("stores descriptions with quotes and SQL-like text verbatim", () => {
+    const repo = memoryRepo();
+    const description = `Bob's "café"'); DROP TABLE transactions; --`;
+    const tx = repo.create(input({ description }));
+    expect(repo.getById(tx.id)?.description).toBe(description);
+    expect(repo.listByMonth("2026-10")).toHaveLength(1);
+  });
+
+  it("stores the maximum amount exactly", () => {
+    const repo = memoryRepo();
+    const tx = repo.create(input({ amountCents: 100_000_000 }));
+    expect(repo.getById(tx.id)?.amountCents).toBe(100_000_000);
+  });
+
+  it("returns false when removing an id that never existed", () => {
+    expect(memoryRepo().remove(12345)).toBe(false);
+  });
 });
 
 describe("listByMonth", () => {
@@ -97,6 +135,30 @@ describe("listByMonth", () => {
     const c = repo.create(input({ date: "2026-10-05" }));
     const d = repo.create(input({ date: "2026-10-01" }));
     expect(repo.listByMonth("2026-10").map((t) => t.id)).toEqual([b.id, c.id, a.id, d.id]);
+  });
+
+  it("separates 31 December from 1 January of the next year", () => {
+    const repo = memoryRepo();
+    const dec = repo.create(input({ date: "2026-12-31" }));
+    const jan = repo.create(input({ date: "2027-01-01" }));
+    expect(repo.listByMonth("2026-12").map((t) => t.id)).toEqual([dec.id]);
+    expect(repo.listByMonth("2027-01").map((t) => t.id)).toEqual([jan.id]);
+  });
+
+  it("includes 29 February in a leap-year February and excludes 1 March", () => {
+    const repo = memoryRepo();
+    const feb29 = repo.create(input({ date: "2028-02-29" }));
+    repo.create(input({ date: "2028-03-01" }));
+    repo.create(input({ date: "2028-01-31" }));
+    expect(repo.listByMonth("2028-02").map((t) => t.id)).toEqual([feb29.id]);
+  });
+
+  it("moves a transaction between months when its date is updated", () => {
+    const repo = memoryRepo();
+    const tx = repo.create(input({ date: "2026-10-01" }));
+    repo.update(tx.id, input({ date: "2026-09-30" }));
+    expect(repo.listByMonth("2026-10")).toEqual([]);
+    expect(repo.listByMonth("2026-09").map((t) => t.id)).toEqual([tx.id]);
   });
 
   it("returns an empty list for an empty month", () => {
@@ -143,6 +205,47 @@ describe("summarizeMonth", () => {
     repo.create(input({ category: "transport", amountCents: 500 }));
     expect(repo.summarizeMonth("2026-10").byCategory.map((c) => c.category)).toEqual(["transport", "other"]);
   });
+
+  it("returns an empty summary for a month that only has neighbouring-month data", () => {
+    const repo = memoryRepo();
+    repo.create(input({ date: "2026-09-30" }));
+    repo.create(input({ date: "2026-11-01" }));
+    expect(repo.summarizeMonth("2026-10")).toEqual({ month: "2026-10", totalCents: 0, count: 0, byCategory: [] });
+  });
+
+  it("agrees with listByMonth on total and count", () => {
+    const repo = memoryRepo();
+    repo.create(input({ amountCents: 1234, date: "2026-10-01" }));
+    repo.create(input({ amountCents: 5678, category: "shopping", date: "2026-10-31" }));
+    repo.create(input({ amountCents: 999, category: "other", date: "2026-10-15" }));
+    const list = repo.listByMonth("2026-10");
+    const summary = repo.summarizeMonth("2026-10");
+    expect(summary.count).toBe(list.length);
+    expect(summary.totalCents).toBe(list.reduce((s, t) => s + t.amountCents, 0));
+  });
+
+  it("sums many maximum amounts exactly as integer cents", () => {
+    const repo = memoryRepo();
+    for (let i = 0; i < 50; i++) repo.create(input({ amountCents: 100_000_000 }));
+    const summary = repo.summarizeMonth("2026-10");
+    expect(summary.totalCents).toBe(5_000_000_000);
+    expect(summary.byCategory).toEqual([{ category: "food", totalCents: 5_000_000_000, count: 50 }]);
+  });
+
+  it("reflects removals and updates", () => {
+    const repo = memoryRepo();
+    const a = repo.create(input({ category: "food", amountCents: 1000 }));
+    const b = repo.create(input({ category: "health", amountCents: 2000 }));
+    repo.remove(a.id);
+    repo.update(b.id, input({ category: "utilities", amountCents: 3000 }));
+    expect(repo.summarizeMonth("2026-10").byCategory).toEqual([
+      { category: "utilities", totalCents: 3000, count: 1 },
+    ]);
+  });
+
+  it("throws on an invalid month", () => {
+    expect(() => memoryRepo().summarizeMonth("2026-00")).toThrow();
+  });
 });
 
 describe("persistence", () => {
@@ -156,12 +259,44 @@ describe("persistence", () => {
     dir = mkdtempSync(join(tmpdir(), "expenses-"));
     const path = join(dir, "nested", "test.db");
     const db1 = openDb(path);
-    const tx = createTransactionsRepo(db1).create(input());
-    db1.close();
+    let tx;
+    try {
+      tx = createTransactionsRepo(db1).create(input());
+    } finally {
+      db1.close();
+    }
 
     const db2 = openDb(path);
-    expect(createTransactionsRepo(db2).getById(tx.id)).toEqual(tx);
-    expect(createTransactionsRepo(db2).listByMonth("2026-10")).toEqual([tx]);
-    db2.close();
+    try {
+      expect(createTransactionsRepo(db2).getById(tx.id)).toEqual(tx);
+      expect(createTransactionsRepo(db2).listByMonth("2026-10")).toEqual([tx]);
+    } finally {
+      db2.close();
+    }
+  });
+
+  it("persists updates and deletes, and continues ids after reopening", () => {
+    dir = mkdtempSync(join(tmpdir(), "expenses-"));
+    const path = join(dir, "test.db");
+    const db1 = openDb(path);
+    let gone, updated;
+    try {
+      const repo1 = createTransactionsRepo(db1, () => new Date("2026-10-06T08:30:00.000Z"));
+      const kept = repo1.create(input({ description: "Rent" }));
+      gone = repo1.create(input({ description: "Typo" }));
+      updated = repo1.update(kept.id, input({ description: "Rent October", category: "housing" }));
+      repo1.remove(gone.id);
+    } finally {
+      db1.close();
+    }
+
+    const db2 = openDb(path);
+    try {
+      const repo2 = createTransactionsRepo(db2);
+      expect(repo2.listByMonth("2026-10")).toEqual([updated]);
+      expect(repo2.create(input()).id).toBeGreaterThan(gone.id);
+    } finally {
+      db2.close();
+    }
   });
 });

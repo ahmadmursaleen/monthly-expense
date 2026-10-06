@@ -96,9 +96,15 @@ export function monthBounds(month: string): { first: string; last: string } {
   return { first: `${month}-01`, last: `${month}-${last}` };
 }
 
+const DAYS_IN_MONTH = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31] as const;
+
+function isLeapYear(year: number): boolean {
+  return (year % 4 === 0 && year % 100 !== 0) || year % 400 === 0;
+}
+
+// Plain arithmetic instead of Date.UTC, which maps years 0-99 to 1900-1999.
 function daysInMonth(year: number, month: number): number {
-  // Day 0 of the next month is the last day of this one.
-  return new Date(Date.UTC(year, month, 0)).getUTCDate();
+  return month === 2 && isLeapYear(year) ? 29 : DAYS_IN_MONTH[month - 1];
 }
 
 /** Validates an untrusted request body. Returns the normalized input (trimmed description) or per-field messages. */
