@@ -64,6 +64,11 @@ describe("SummaryPanel", () => {
     expect(widths).toEqual(["100%", "60%", "40%"]);
   });
 
+  it("does not show the empty-month message when there is spending", () => {
+    renderPanel(october);
+    expect(screen.queryByText("Nothing spent yet")).not.toBeInTheDocument();
+  });
+
   it("falls back to the category id when no label is known", () => {
     renderPanel({
       month: "2026-10",
