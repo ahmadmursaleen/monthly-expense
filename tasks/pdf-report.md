@@ -28,3 +28,4 @@ lease_until: 2026-10-06T09:15:07Z
 `pdfkit` and `@types/pdfkit` are already installed in `backend/`. Do not add npm dependencies
 (avoids package-lock conflicts with parallel tasks).
 - ASSUMPTION (2026-10-06 10:57+0200 by R1427WW10P/agent-1): Generated-at time uses the server's local time zone (local single-user app); shares are de-DE percent with one decimal ('40,0 %') and may not sum exactly to 100 due to rounding
+- ASSUMPTION (2026-10-06 10:57+0200 by R1427WW10P/agent-1): /api/reports/<x> answers 400 JSON for anything that is not exactly a valid YYYY-MM followed by lowercase .pdf (e.g. 'abc', '2026-10', '2026-10.PDF'); descriptions too long for the column are clipped to one line with an ellipsis; characters outside Helvetica/WinAnsi are not rendered correctly (no font embedding, no new deps)
