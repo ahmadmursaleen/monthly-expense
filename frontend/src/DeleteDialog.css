@@ -1,4 +1,53 @@
-/* DeleteDialog styles (owned by fe-form). Stub: the component renders nothing yet. */
+/* Delete confirmation dialog (see docs/UI-DESIGN.md). */
 .delete-dialog {
+  width: calc(100% - 2 * var(--space-4));
   max-width: 28rem;
+  padding: var(--space-5);
+  border: 1px solid var(--rule-strong);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  color: var(--ink);
+  box-shadow: var(--shadow-raised);
+}
+
+.delete-dialog::backdrop {
+  background: rgb(29 42 68 / 0.35);
+}
+
+.delete-dialog__title {
+  font-size: var(--text-lg);
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.delete-dialog__hint {
+  margin: var(--space-2) 0 0;
+  color: var(--ink-soft);
+  font-size: var(--text-sm);
+}
+
+.delete-dialog__alert {
+  margin: var(--space-4) 0 0;
+  padding: var(--space-2) var(--space-3);
+  border-left: 3px solid var(--danger);
+  background: var(--danger-tint);
+  color: var(--danger);
+  font-size: var(--text-sm);
+}
+
+.delete-dialog__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-2);
+  margin-top: var(--space-5);
+}
+
+@media (max-width: 719px) {
+  .delete-dialog__actions {
+    flex-direction: column-reverse;
+  }
+
+  .delete-dialog__actions .btn {
+    width: 100%;
+  }
 }

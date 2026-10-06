@@ -1,4 +1,117 @@
-/* ExpenseDialog styles (owned by fe-form). Stub: the component renders nothing yet. */
+/* Add/edit expense dialog: a single ledger sheet floating over the page (see docs/UI-DESIGN.md). */
 .expense-dialog {
+  width: calc(100% - 2 * var(--space-4));
   max-width: 28rem;
+  padding: var(--space-5);
+  border: 1px solid var(--rule-strong);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  color: var(--ink);
+  box-shadow: var(--shadow-raised);
+}
+
+.expense-dialog::backdrop {
+  background: rgb(29 42 68 / 0.35);
+}
+
+.expense-dialog__form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+/* The title sits on a heavy ink rule, like the heading of a ledger page. */
+.expense-dialog__title {
+  padding-bottom: var(--space-2);
+  border-bottom: 2px solid var(--ink);
+  font-size: var(--text-lg);
+  font-weight: 700;
+}
+
+.expense-dialog__alert {
+  margin: 0;
+  padding: var(--space-2) var(--space-3);
+  border-left: 3px solid var(--danger);
+  background: var(--danger-tint);
+  color: var(--danger);
+  font-size: var(--text-sm);
+}
+
+.expense-dialog__row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-4);
+}
+
+.expense-dialog .field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.expense-dialog .field label {
+  font-size: var(--text-sm);
+  font-weight: 600;
+}
+
+.expense-dialog .field input,
+.expense-dialog .field select {
+  width: 100%;
+  min-height: 2.5rem;
+  padding: 0 var(--space-3);
+  border: 1px solid var(--control-border);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+}
+
+.expense-dialog .field [aria-invalid="true"] {
+  border-color: var(--danger);
+}
+
+/* Amounts read like the ledger's amount column: right-aligned, semibold, with the euro sign after. */
+.expense-dialog .field__amount {
+  position: relative;
+}
+
+.expense-dialog .field__amount input {
+  padding-right: calc(var(--space-3) + 1.25em);
+  font-weight: 600;
+  text-align: right;
+}
+
+.expense-dialog .field__suffix {
+  position: absolute;
+  top: 50%;
+  right: var(--space-3);
+  transform: translateY(-50%);
+  color: var(--ink-soft);
+  pointer-events: none;
+}
+
+.expense-dialog .field__error {
+  margin: 0;
+  color: var(--danger);
+  font-size: var(--text-xs);
+}
+
+.expense-dialog__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-2);
+  padding-top: var(--space-2);
+}
+
+@media (max-width: 719px) {
+  .expense-dialog__row {
+    grid-template-columns: 1fr;
+  }
+
+  .expense-dialog__actions {
+    flex-direction: column-reverse;
+  }
+
+  .expense-dialog__actions .btn {
+    width: 100%;
+  }
 }
