@@ -43,6 +43,37 @@ describe("generateSeed", () => {
   it("rejects an invalid date", () => {
     expect(() => generateSeed("2026-02-30")).toThrow("Invalid date");
   });
+
+  it.each(["", "2026-10", "06.10.2026", "2026-13-01", "2025-02-29"])("rejects malformed today %j", (today) => {
+    expect(() => generateSeed(today)).toThrow("Invalid date");
+  });
+
+  it("holds every acceptance property for every day of a leap and a non-leap year", () => {
+    const allCategories = new Set(CATEGORIES.map((c) => c.id));
+    for (const year of [2024, 2026]) {
+      for (let d = new Date(Date.UTC(year, 0, 1)); d.getUTCFullYear() === year; d.setUTCDate(d.getUTCDate() + 1)) {
+        const today = d.toISOString().slice(0, 10);
+        const items = generateSeed(today);
+        const [y, m] = today.split("-").map(Number);
+        const months = [2, 1, 0].map((back) => {
+          const index = y * 12 + (m - 1) - back;
+          return `${Math.floor(index / 12)}-${String((index % 12) + 1).padStart(2, "0")}`;
+        });
+
+        expect(items.length, today).toBeGreaterThanOrEqual(40);
+        expect(items.length, today).toBeLessThanOrEqual(60);
+        expect(new Set(items.map((t) => t.date.slice(0, 7))), today).toEqual(new Set(months));
+        for (const month of months) {
+          const used = new Set(items.filter((t) => t.date.startsWith(month)).map((t) => t.category));
+          expect(used, `${today} ${month}`).toEqual(allCategories);
+        }
+        for (const item of items) {
+          expect(item.date <= today, `${today}: ${item.date}`).toBe(true);
+          expect(validateTransactionInput(item).ok, `${today}: ${JSON.stringify(item)}`).toBe(true);
+        }
+      }
+    }
+  });
 });
 
 describe("localDate", () => {

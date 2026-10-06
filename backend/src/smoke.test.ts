@@ -18,8 +18,9 @@ let base: string;
 beforeAll(async () => {
   dir = mkdtempSync(join(tmpdir(), "expenses-smoke-"));
   db = openDb(join(dir, "smoke.db"));
-  server = await new Promise<Server>((resolve) => {
+  server = await new Promise<Server>((resolve, reject) => {
     const s = createApp(db).listen(0, "127.0.0.1", () => resolve(s));
+    s.once("error", reject);
   });
   base = `http://127.0.0.1:${(server.address() as AddressInfo).port}/api`;
 });

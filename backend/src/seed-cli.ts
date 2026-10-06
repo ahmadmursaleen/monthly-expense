@@ -1,9 +1,9 @@
 /** `npm run seed -w backend`: replaces all transactions with demo data. Uses `DB_PATH` like the server. */
-import { openDb } from "./db.js";
+import { defaultDbPath, openDb } from "./db.js";
 import { generateSeed, localDate } from "./seed.js";
 import { createTransactionsRepo } from "./transactions.repo.js";
 
-const dbPath = process.env.DB_PATH ?? "data/expenses.db";
+const dbPath = defaultDbPath();
 const today = localDate(new Date());
 const items = generateSeed(today);
 

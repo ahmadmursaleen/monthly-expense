@@ -302,6 +302,12 @@ describe("persistence", () => {
 });
 
 describe("transactions repo replaceAll", () => {
+  let dir: string | undefined;
+  afterEach(() => {
+    if (dir) rmSync(dir, { recursive: true, force: true });
+    dir = undefined;
+  });
+
   it("deletes everything, inserts the new rows and returns the deleted count", () => {
     const repo = memoryRepo(() => new Date("2026-10-06T08:30:00.000Z"));
     repo.create(input({ date: "2026-09-01" }));
@@ -316,5 +322,42 @@ describe("transactions repo replaceAll", () => {
     const kept = repo.create(input());
     expect(() => repo.replaceAll([input(), input({ amountCents: 0 })])).toThrow();
     expect(repo.listByMonth("2026-10")).toEqual([kept]);
+  });
+
+  it("returns 0 on an empty table and clears everything when given no inputs", () => {
+    const repo = memoryRepo();
+    expect(repo.replaceAll([input({ description: "First seed" })])).toBe(0);
+    expect(repo.replaceAll([])).toBe(1);
+    expect(repo.listByMonth("2026-10")).toEqual([]);
+  });
+
+  it("leaves no open transaction after a rollback, so the repo keeps working", () => {
+    const repo = memoryRepo();
+    const kept = repo.create(input());
+    expect(() => repo.replaceAll([input({ amountCents: -5 })])).toThrow();
+    const added = repo.create(input({ description: "After failure", date: "2026-10-07" }));
+    expect(repo.listByMonth("2026-10")).toEqual([added, kept]);
+    expect(repo.replaceAll([input({ description: "Retry" })])).toBe(2);
+    expect(repo.listByMonth("2026-10").map((t) => t.description)).toEqual(["Retry"]);
+  });
+
+  it("commits the replacement durably to a file database", () => {
+    dir = mkdtempSync(join(tmpdir(), "expenses-"));
+    const path = join(dir, "seed.db");
+    const db1 = openDb(path);
+    try {
+      const repo1 = createTransactionsRepo(db1);
+      repo1.create(input({ description: "Old" }));
+      repo1.replaceAll([input({ description: "Seeded rent", category: "housing", amountCents: 95000 })]);
+    } finally {
+      db1.close();
+    }
+
+    const db2 = openDb(path);
+    try {
+      expect(createTransactionsRepo(db2).listByMonth("2026-10").map((t) => t.description)).toEqual(["Seeded rent"]);
+    } finally {
+      db2.close();
+    }
   });
 });
