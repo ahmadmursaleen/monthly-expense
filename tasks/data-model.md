@@ -29,3 +29,4 @@ transactions. No HTTP code (that is `tx-api`).
 ## Notes
 Files: `backend/src/domain.ts`, `db.ts`, `transactions.repo.ts` and their tests. Don't touch `app.ts`.
 Do not add npm dependencies (avoids package-lock conflicts with parallel tasks).
+- ASSUMPTION (2026-10-06 10:44+0200 by R1427WW10P/agent-1): monthBounds returns {first, last} with both days inclusive (e.g. 2026-10-01..2026-10-31), queried with BETWEEN; it throws on an invalid month. Repo is a factory createTransactionsRepo(db, now?) with an injectable clock.
