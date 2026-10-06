@@ -23,3 +23,4 @@ SPEC M5: the month's total and a simple visual of spending per category.
 Owns `SummaryPanel.tsx`, `CategoryBars.tsx` and their CSS/tests only. Keep the props from `fe-shell`; if
 the contract is insufficient, make the smallest change elsewhere and record it with `tasks.py assume`.
 Do not add npm dependencies (avoids package-lock conflicts with parallel tasks).
+- ASSUMPTION (2026-10-06 11:15+0200 by R1427WW10P/agent-1): frontend-design: summary is one bordered sheet; left column = month total (Bricolage, --text-xl) + 'N expenses' in --ink-soft; right column = ledger-style category rows (label left, semibold amount and share % right, thin 8px --bar on --bar-track below, bars aria-hidden since values are text); stacks below 720px; shares rounded to whole %, '<1%' for tiny non-zero shares; unknown category ids fall back to the raw id
