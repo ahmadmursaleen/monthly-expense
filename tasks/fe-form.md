@@ -30,3 +30,4 @@ Owns `ExpenseDialog.tsx`, `DeleteDialog.tsx` and their CSS/tests only. Keep the 
 if the contract is insufficient, make the smallest change elsewhere and record it with `tasks.py assume`.
 Do not add npm dependencies (avoids package-lock conflicts with parallel tasks).
 - ASSUMPTION (2026-10-06 11:02+0200 by R1427WW10P/agent-2): frontend-design: dialogs follow docs/UI-DESIGN.md as-is (native dialog, --surface panel, --shadow-raised, 28rem); the title sits on a 2px ink rule like a ledger page heading; amount field is right-aligned tabular with a trailing euro sign like a ledger amount column; amount and date share one row (stacked below 720px); errors in --danger below each field; no new tokens
+- ASSUMPTION (2026-10-06 11:02+0200 by R1427WW10P/agent-2): Added frontend/src/useModalDialog.ts (shared showModal/close, Escape, focus-in/focus-return hook) used by both dialogs; falls back to the open attribute when showModal is missing (jsdom)
