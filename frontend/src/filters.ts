@@ -5,6 +5,11 @@ export type Filters = { query: string; category: string };
 
 export const emptyFilters: Filters = { query: "", category: "" };
 
+/** True while a filter narrows the list: a non-blank query or a chosen category. */
+export function isFiltered(f: Filters): boolean {
+  return f.query.trim() !== "" || f.category !== "";
+}
+
 /**
  * Keeps the transactions whose description contains the trimmed query (case-insensitive) and whose
  * category equals `f.category`. An empty query or category does not filter. Pure: returns a new array.

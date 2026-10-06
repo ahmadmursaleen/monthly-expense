@@ -3,7 +3,7 @@ import DeleteDialog from "./DeleteDialog";
 import ErrorBanner from "./ErrorBanner";
 import ExpenseDialog from "./ExpenseDialog";
 import FilterBar from "./FilterBar";
-import { applyFilters, emptyFilters, type Filters } from "./filters";
+import { applyFilters, emptyFilters, isFiltered, type Filters } from "./filters";
 import { currentMonth, monthOf, monthTitle, shiftMonth } from "./format";
 import MonthHeader from "./MonthHeader";
 import { useNotify } from "./Notice";
@@ -16,10 +16,6 @@ import { useMonthParam } from "./useMonthParam";
 import "./Dashboard.css";
 
 type EditorState = { open: false } | { open: true; transaction: Transaction | null };
-
-function isFiltered(f: Filters): boolean {
-  return f.query.trim() !== "" || f.category !== "";
-}
 
 /** The page: month header, summary, toolbar, transaction list and the dialogs. */
 export default function Dashboard() {

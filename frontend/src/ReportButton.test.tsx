@@ -55,6 +55,58 @@ it("shows Generating… and is disabled while busy", async () => {
   expect(await screen.findByRole("button", { name: "Download PDF" })).toBeEnabled();
 });
 
+it("names the file after the month it was given", async () => {
+  downloadReport.mockResolvedValue({ blob: new Blob(["%PDF"]), filename: "expenses-2025-01.pdf" });
+  render(<ReportButton month="2025-01" onError={vi.fn()} />);
+
+  fireEvent.click(screen.getByRole("button", { name: "Download PDF" }));
+
+  await waitFor(() => expect(clicked).toHaveLength(1));
+  expect(downloadReport).toHaveBeenCalledWith("2025-01");
+  expect(clicked[0].download).toBe("expenses-2025-01.pdf");
+});
+
+it("does not start a second download while one is in progress", async () => {
+  let resolve!: (v: { blob: Blob; filename: string }) => void;
+  downloadReport.mockReturnValue(new Promise((r) => (resolve = r)));
+  render(<ReportButton month="2026-10" onError={vi.fn()} />);
+
+  fireEvent.click(screen.getByRole("button", { name: "Download PDF" }));
+  const busy = await screen.findByRole("button", { name: "Generating…" });
+  fireEvent.click(busy);
+  expect(downloadReport).toHaveBeenCalledTimes(1);
+
+  resolve({ blob: new Blob(["%PDF"]), filename: "expenses-2026-10.pdf" });
+  await waitFor(() => expect(clicked).toHaveLength(1));
+});
+
+it("reports a non-API failure (e.g. network TypeError) through onError exactly once", async () => {
+  downloadReport.mockRejectedValue(new TypeError("Failed to fetch"));
+  const onError = vi.fn();
+  render(<ReportButton month="2026-10" onError={onError} />);
+
+  fireEvent.click(screen.getByRole("button", { name: "Download PDF" }));
+
+  await waitFor(() => expect(onError).toHaveBeenCalledWith("Couldn't generate the PDF report. Try again."));
+  expect(onError).toHaveBeenCalledTimes(1);
+  expect(URL.createObjectURL).not.toHaveBeenCalled();
+});
+
+it("can retry after a failure and then downloads", async () => {
+  downloadReport.mockRejectedValueOnce(new api.ApiError(500, "boom"));
+  downloadReport.mockResolvedValueOnce({ blob: new Blob(["%PDF"]), filename: "expenses-2026-10.pdf" });
+  const onError = vi.fn();
+  render(<ReportButton month="2026-10" onError={onError} />);
+
+  fireEvent.click(screen.getByRole("button", { name: "Download PDF" }));
+  await waitFor(() => expect(onError).toHaveBeenCalledTimes(1));
+
+  fireEvent.click(await screen.findByRole("button", { name: "Download PDF" }));
+  await waitFor(() => expect(clicked).toHaveLength(1));
+  expect(clicked[0].download).toBe("expenses-2026-10.pdf");
+  expect(onError).toHaveBeenCalledTimes(1);
+});
+
 it("calls onError and resets the button when the download fails", async () => {
   downloadReport.mockRejectedValue(new api.ApiError(500, "boom"));
   const onError = vi.fn();

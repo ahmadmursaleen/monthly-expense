@@ -1,5 +1,5 @@
-import { useId } from "react";
-import { emptyFilters, type Filters } from "./filters";
+import { useId, useRef } from "react";
+import { emptyFilters, isFiltered, type Filters } from "./filters";
 import type { Category } from "./types";
 import "./FilterBar.css";
 
@@ -14,13 +14,21 @@ export default function FilterBar({ categories, filters, onChange }: FilterBarPr
   const id = useId();
   const searchId = `${id}-search`;
   const categoryId = `${id}-category`;
-  const active = filters.query.trim() !== "" || filters.category !== "";
+  const active = isFiltered(filters);
+  const searchRef = useRef<HTMLInputElement>(null);
+
+  function handleClear() {
+    onChange(emptyFilters);
+    // Clear unmounts itself once the filters are empty; keep keyboard focus in the bar.
+    searchRef.current?.focus();
+  }
 
   return (
     <div className="filter-bar" role="search">
       <div className="filter-bar__field filter-bar__field--search">
         <label htmlFor={searchId}>Search descriptions</label>
         <input
+          ref={searchRef}
           id={searchId}
           type="search"
           className="filter-bar__control"
@@ -46,7 +54,7 @@ export default function FilterBar({ categories, filters, onChange }: FilterBarPr
         </select>
       </div>
       {active && (
-        <button type="button" className="btn btn-quiet filter-bar__clear" onClick={() => onChange(emptyFilters)}>
+        <button type="button" className="btn btn-quiet filter-bar__clear" onClick={handleClear}>
           Clear
         </button>
       )}
