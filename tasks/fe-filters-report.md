@@ -1,10 +1,10 @@
 ---
 title: Search, category filter and PDF download
-status: in_progress
+status: done
 owner: R1427WW10P/agent-1
 deps: [fe-shell]
 prio: 2
-lease_until: 2026-10-06T09:29:47Z
+lease_until: 
 ---
 ## Goal
 SPEC M6, M7: narrow the list by description and category, and download the monthly PDF.
