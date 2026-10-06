@@ -29,7 +29,7 @@ all-caps labels.
 | `--rule` / `--rule-strong` | `#b9cdbf` / `#8fae99` | row rules, sheet and section rules (decorative, not for controls) |
 | `--control-border` | `#677f6f` | borders of inputs, selects and `.btn` (4.2:1 on `--surface`, 3.8:1 on `--paper`, meets WCAG 1.4.11) |
 | `--action` | `#2846b8` | primary buttons, links, focus ring, bars (`--bar`) |
-| `--danger` | `#b3261e` | delete, error banner and error toasts (`--danger-tint` background) |
+| `--danger` | `#b3261e` | delete, error banner and error toasts (`--danger-tint` background; `--danger-hover` `#8f1e18`) |
 | `--success` | `#2e6b45` | success toasts |
 
 Bars use one ink (`--bar` on `--bar-track`). The category label carries the meaning, not a color, so
@@ -57,7 +57,11 @@ the bars stay readable in black and white. All text colors pass WCAG AA on `--pa
 
 - **Buttons** (global classes in `styles.css`): `.btn` (outlined, default), `.btn-primary` (ink-blue
   fill, one per area: "Add expense", dialog submit), `.btn-danger` (confirm delete), `.btn-quiet`
-  (text button, e.g. row Edit/Delete). Min height 40 px (32 px for quiet).
+  (text button, e.g. row Edit/Delete). Min height 40 px (32 px for quiet). A button that can become
+  unavailable right after it is pressed (Today) uses `aria-disabled="true"` instead of `disabled`, so
+  keyboard focus stays on it.
+- **Focus after delete:** the deleted row's button disappears, so the dashboard moves focus to the
+  expense list section (`tabIndex=-1`).
 - **Inputs** (for `fe-form` / `fe-filters-report`): 40 px high, `--surface` background,
   `1px solid var(--control-border)` (never `--rule`/`--rule-strong`: too faint for a field boundary), `--radius-md`, a visible label above, and the error text in `--danger`
   below the field with `aria-describedby`.
