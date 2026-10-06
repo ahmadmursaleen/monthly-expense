@@ -1,0 +1,71 @@
+/* Ledger rows: label, amount and share on one line, the bar ruled underneath. One ink for all bars. */
+.category-bars {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.category-bars__row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto 3rem;
+  align-items: baseline;
+  gap: var(--space-1) var(--space-3);
+  padding: var(--space-2) 0;
+  border-bottom: 1px solid var(--rule);
+}
+
+.category-bars__row:first-child {
+  padding-top: 0;
+}
+
+.category-bars__row:last-child {
+  border-bottom: 0;
+  padding-bottom: 0;
+}
+
+.category-bars__label {
+  overflow: hidden;
+  color: var(--ink);
+  font-size: var(--text-sm);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.category-bars__amount {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  text-align: right;
+}
+
+.category-bars__share {
+  color: var(--ink-faint);
+  font-size: var(--text-xs);
+  text-align: right;
+}
+
+.category-bars__track {
+  grid-column: 1 / -1;
+  display: block;
+  height: var(--space-2);
+  border-radius: 2px;
+  background: var(--bar-track);
+  overflow: hidden;
+}
+
+.category-bars__bar {
+  display: block;
+  height: 100%;
+  min-width: 2px;
+  background: var(--bar);
+}
+
+/* Windows high contrast: keep the bar visible when backgrounds are dropped. */
+@media (forced-colors: active) {
+  .category-bars__track {
+    border: 1px solid CanvasText;
+  }
+
+  .category-bars__bar {
+    background: CanvasText;
+  }
+}

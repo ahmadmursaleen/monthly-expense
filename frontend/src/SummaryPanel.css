@@ -1,4 +1,7 @@
 .summary-panel {
+  display: grid;
+  grid-template-columns: minmax(12rem, 16rem) minmax(0, 1fr);
+  gap: var(--space-6);
   padding: var(--space-5);
   border: 1px solid var(--rule);
   border-radius: var(--radius-md);
@@ -6,6 +9,7 @@
 }
 
 .summary-panel__title {
+  margin: 0;
   color: var(--ink-soft);
   font-size: var(--text-sm);
   font-weight: 600;
@@ -17,4 +21,36 @@
   font-size: var(--text-xl);
   font-weight: 600;
   line-height: var(--leading-tight);
+}
+
+.summary-panel__count {
+  margin: var(--space-2) 0 0;
+  color: var(--ink-soft);
+  font-size: var(--text-sm);
+}
+
+/* A ruled margin between the totals and the category lines, like a ledger column. */
+.summary-panel__categories {
+  padding-left: var(--space-6);
+  border-left: 1px solid var(--rule-strong);
+}
+
+.summary-panel__empty {
+  margin: 0;
+  color: var(--ink-faint);
+  font-size: var(--text-sm);
+}
+
+@media (max-width: 719px) {
+  .summary-panel {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-4);
+    padding: var(--space-4);
+  }
+
+  .summary-panel__categories {
+    padding: var(--space-4) 0 0;
+    border-left: 0;
+    border-top: 1px solid var(--rule-strong);
+  }
 }
