@@ -1,9 +1,10 @@
 ---
 title: Add, edit and delete expenses
-status: todo
-owner:
+status: in_progress
+owner: R1427WW10P/agent-2
 deps: [fe-shell]
 prio: 1
+lease_until: 2026-10-06T09:21:48Z
 ---
 ## Goal
 SPEC M1–M3, M9: the dialogs to create, edit and delete expenses, with validation and error states.
