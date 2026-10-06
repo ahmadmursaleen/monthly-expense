@@ -25,3 +25,4 @@ Implement the JSON part of the API contract (SPEC §6) on top of the repository.
 ## Notes
 Do not add npm dependencies (avoids package-lock conflicts with parallel tasks).
 - ASSUMPTION (2026-10-06 10:51+0200 by R1427WW10P/agent-1): PUT checks the id (404) before validating the body (400): an unknown id answers 404 even with an invalid body
+- ASSUMPTION (2026-10-06 10:51+0200 by R1427WW10P/agent-1): Unsupported methods on /api paths (e.g. PATCH) answer 404 JSON, not 405; 4xx errors from body-parser map to {error}, others to 500 {error: Internal server error}
