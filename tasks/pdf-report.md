@@ -27,3 +27,4 @@ lease_until: 2026-10-06T09:15:07Z
 ## Notes
 `pdfkit` and `@types/pdfkit` are already installed in `backend/`. Do not add npm dependencies
 (avoids package-lock conflicts with parallel tasks).
+- ASSUMPTION (2026-10-06 10:57+0200 by R1427WW10P/agent-1): Generated-at time uses the server's local time zone (local single-user app); shares are de-DE percent with one decimal ('40,0 %') and may not sum exactly to 100 due to rounding
