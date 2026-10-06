@@ -1,9 +1,10 @@
 ---
 title: Summary panel with category spending bars
-status: todo
-owner:
+status: in_progress
+owner: R1427WW10P/agent-1
 deps: [fe-shell]
 prio: 2
+lease_until: 2026-10-06T09:34:40Z
 ---
 ## Goal
 SPEC M5: the month's total and a simple visual of spending per category.
