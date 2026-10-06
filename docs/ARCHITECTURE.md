@@ -107,7 +107,7 @@ Errors are JSON: `{"error": string, "fields"?: {"<field>": "<message>"}}`. Trans
 | PUT | `/api/transactions/:id` | same as POST (full replace) | `200 Transaction` | `404` unknown/non-numeric id, `400` with `fields` | `routes/api.ts` |
 | DELETE | `/api/transactions/:id` | – | `204` | `404` | `routes/api.ts` |
 | GET | `/api/summary?month=YYYY-MM` | – | `200 {month, totalCents, count, byCategory: [{category, totalCents, count}]}`, only spent categories, total desc | `400` | `routes/api.ts` |
-| GET | `/api/reports/YYYY-MM.pdf` | – | `200 application/pdf`, `Content-Disposition: attachment; filename="expenses-YYYY-MM.pdf"` | `400` JSON for an invalid month | `pdf-report` task |
+| GET | `/api/reports/YYYY-MM.pdf` | – | `200 application/pdf`, `Content-Disposition: attachment; filename="expenses-YYYY-MM.pdf"` | `400` JSON for an invalid month or a name not ending in `.pdf`; query parameters ignored | `routes/report.ts` (data: `report.ts`) |
 
 Any other `/api/*` path or method → `404 {"error"}`; a malformed JSON body → `400 {"error"}`. New API
 routers are mounted in `createApp` before the `/api` 404 catch-all.

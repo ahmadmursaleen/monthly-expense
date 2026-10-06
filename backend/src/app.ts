@@ -1,6 +1,7 @@
 import express from "express";
 import type { DatabaseSync } from "node:sqlite";
 import { apiErrorHandler, apiNotFound, createApiRouter } from "./routes/api.js";
+import { createReportRouter } from "./routes/report.js";
 
 /** Builds the app without listening, so tests can drive it with supertest. */
 export function createApp(db: DatabaseSync) {
@@ -13,6 +14,7 @@ export function createApp(db: DatabaseSync) {
   });
 
   app.use("/api", createApiRouter(db));
+  app.use("/api", createReportRouter(db));
   // Further API routers (e.g. the PDF report) go above this line: the 404 catch-all must stay last.
   app.use("/api", apiNotFound);
   app.use(apiErrorHandler);
