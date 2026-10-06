@@ -302,6 +302,33 @@ describe("dialogs", () => {
     await waitFor(() => expect(listMock).toHaveBeenCalledTimes(2));
   });
 
+  it("moves focus to the Expenses section (not focusable by Tab) after onDeleted", async () => {
+    await renderLoaded();
+    const section = screen.getByRole("region", { name: "Expenses" });
+    expect(section).toHaveAttribute("tabindex", "-1");
+    const deleteButton = screen.getByRole("button", { name: "Delete Groceries" });
+    deleteButton.focus();
+    act(() => deleteButton.click());
+
+    act(() => lastProps(deleteDialogProps).onDeleted());
+    expect(section).toHaveFocus();
+    expect(document.body).not.toHaveFocus();
+    await waitFor(() => expect(listMock).toHaveBeenCalledTimes(2));
+  });
+
+  it("does not move focus to the Expenses section when the delete dialog is closed without deleting", async () => {
+    await renderLoaded();
+    const deleteButton = screen.getByRole("button", { name: "Delete Groceries" });
+    deleteButton.focus();
+    act(() => deleteButton.click());
+
+    act(() => lastProps(deleteDialogProps).onClose());
+    expect(lastProps(deleteDialogProps).transaction).toBeNull();
+    expect(screen.getByRole("region", { name: "Expenses" })).not.toHaveFocus();
+    expect(deleteButton).toHaveFocus();
+    expect(listMock).toHaveBeenCalledTimes(1);
+  });
+
   it("onSaved in the viewed month closes the dialog and reloads without a notice", async () => {
     await renderLoaded();
     act(() => screen.getByRole("button", { name: "Add expense" }).click());
@@ -358,6 +385,39 @@ describe("month navigation across years", () => {
     act(() => today.click());
     expect(screen.getByRole("heading", { level: 1, name: "October 2026" })).toBeInTheDocument();
     expect(window.location.search).toBe("?month=2026-10");
+  });
+
+  it("keeps keyboard focus on Today after it returns to the current month", async () => {
+    setUrl("?month=2026-09");
+    await renderLoaded();
+    const today = screen.getByRole("button", { name: "Today" });
+    today.focus();
+    act(() => today.click());
+    expect(screen.getByRole("heading", { level: 1, name: "October 2026" })).toBeInTheDocument();
+    expect(await screen.findByText("Groceries")).toBeInTheDocument();
+    expect(today).toHaveAttribute("aria-disabled", "true");
+    expect(today).toHaveFocus();
+  });
+
+  it("Today on the current month stays focusable and does nothing (no URL change, history entry or refetch)", async () => {
+    await renderLoaded();
+    const today = screen.getByRole("button", { name: "Today" });
+    expect(today).toHaveAttribute("aria-disabled", "true");
+    expect(today).not.toBeDisabled();
+    today.focus();
+    expect(today).toHaveFocus();
+
+    const historyLength = window.history.length;
+    const listCalls = listMock.mock.calls.length;
+    const summaryCalls = summaryMock.mock.calls.length;
+    act(() => today.click());
+
+    expect(window.location.search).toBe("?month=2026-10");
+    expect(window.history.length).toBe(historyLength);
+    expect(screen.getByRole("heading", { level: 1, name: "October 2026" })).toBeInTheDocument();
+    expect(listMock).toHaveBeenCalledTimes(listCalls);
+    expect(summaryMock).toHaveBeenCalledTimes(summaryCalls);
+    expect(today).toHaveFocus();
   });
 
   it("keeps other query params when changing the month", async () => {
