@@ -1,9 +1,10 @@
 ---
 title: REST endpoints: categories, transactions, monthly summary
-status: todo
-owner:
+status: in_progress
+owner: R1427WW10P/agent-1
 deps: [data-model]
 prio: 1
+lease_until: 2026-10-06T09:10:31Z
 ---
 ## Goal
 Implement the JSON part of the API contract (SPEC §6) on top of the repository.
