@@ -28,3 +28,4 @@ Owns `FilterBar.tsx`, `filters.ts`, `ReportButton.tsx` and their CSS/tests only.
 `fe-shell`; if the contract is insufficient, make the smallest change elsewhere and record it with
 `tasks.py assume`. Do not add npm dependencies (avoids package-lock conflicts with parallel tasks).
 - ASSUMPTION (2026-10-06 11:07+0200 by R1427WW10P/agent-1): frontend-design: kept the cash-book direction quiet - visible sentence-case labels above 40px fields with --control-border, Clear as a .btn-quiet at field height, outlined .btn for Download PDF (Add expense stays the one primary); fields stack full width below 720px
+- ASSUMPTION (2026-10-06 11:07+0200 by R1427WW10P/agent-1): Changed .dashboard__toolbar align-items center->flex-end in Dashboard.css (fe-shell file) so buttons line up with the labelled fields instead of floating mid-label
