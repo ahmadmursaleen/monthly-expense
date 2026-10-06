@@ -1,9 +1,10 @@
 ---
 title: Backend domain, SQLite schema and transaction repository
-status: todo
-owner:
+status: in_progress
+owner: R1427WW10P/agent-1
 deps: []
 prio: 1
+lease_until: 2026-10-06T09:03:06Z
 ---
 ## Goal
 The backend data layer from SPEC.md §5–6: everything the API and the PDF report need to read and write
