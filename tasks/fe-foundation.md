@@ -4,7 +4,7 @@ status: in_progress
 owner: R1427WW10P/agent-1
 deps: []
 prio: 1
-lease_until: 2026-10-06T08:54:29Z
+lease_until: 2026-10-06T08:59:29Z
 ---
 ## Goal
 The non-visual base for every UI task: types and a client for the whole API contract (SPEC §6), and
