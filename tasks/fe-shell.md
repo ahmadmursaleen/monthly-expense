@@ -1,10 +1,10 @@
 ---
 title: Dashboard shell: visual direction, month navigation, transaction list
-status: in_progress
+status: done
 owner: R1427WW10P/agent-2
 deps: [fe-foundation]
 prio: 1
-lease_until: 2026-10-06T09:20:43Z
+lease_until: 
 ---
 ## Goal
 The first UI task: set the visual direction with frontend-design and build the dashboard frame
