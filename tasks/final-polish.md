@@ -28,3 +28,4 @@ Make the app demo-ready (SPEC M10, S2) and verify the SPEC §2 demo script end t
 ## Notes
 Do not add npm dependencies (avoids package-lock conflicts with parallel tasks).
 - ASSUMPTION (2026-10-06 13:45+0200 by sisterPC/agent-1): frontend-design: the frontend-design skill is not installed in this agent session (not in the skill list), so its method was applied by hand against docs/UI-DESIGN.md: no new direction or tokens, only consistency fixes - Today uses aria-disabled so keyboard focus survives, focus moves to the expense list after a delete, .btn-danger gets a hover state like .btn-primary
+- ASSUMPTION (2026-10-06 13:45+0200 by sisterPC/agent-1): Demo run uses vite preview (port 4173, same /api proxy as dev) to serve the production build and curl for the API steps; browser-only steps (visual layout, keyboard path) were checked by code/CSS review and component tests, not in a real browser (headless agent)
