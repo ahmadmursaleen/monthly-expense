@@ -8,6 +8,7 @@ board and build them. Allow 10 minutes. Works on Linux, macOS and Windows.
 |---|---|---|---|
 | git | `sudo apt install git` / `sudo dnf install git` | `xcode-select --install` | [Git for Windows](https://git-scm.com/download/win) |
 | Python 3 | usually installed | installed with the above | [python.org](https://www.python.org/downloads/): tick "Add python.exe to PATH" |
+| Node.js 22.13+ | [nvm](https://github.com/nvm-sh/nvm): `nvm install 24` | `brew install node@24` | [nodejs.org](https://nodejs.org) LTS (adds node to PATH) |
 | Claude Code | `curl -fsSL https://claude.ai/install.sh \| bash` | same as Linux | `irm https://claude.ai/install.ps1 \| iex` |
 
 Then:

@@ -149,3 +149,24 @@ claims while they replan). Agents don't use these.
 Other commands: `list`, `status`, `check` (validates deps/cycles), `graph` (writes BOARD.md + board.html),
 `heartbeat` (renews your leases; the agent runner does this for you), `redo` (see Merge conflicts),
 `extend` / `split` / `hold` (see Too big or stuck).
+
+## Project notes
+Monthly expense tracker: `backend/` (Express + `node:sqlite`) and `frontend/` (React + Vite), one npm
+workspace. Details: `docs/ARCHITECTURE.md`. Requirements: `SPEC.md`.
+
+- **Install:** `npm install` at the repo root (Node 22.13+). After pulling a lockfile change, run it again.
+- **Run:** `npm run dev -w backend` (API on :3001) and `npm run dev -w frontend` (UI on :5173, proxies `/api`).
+- **Test:** `npm run check` (lint + type-check + all tests). `.taskcheck` runs `sh scripts/check.sh`,
+  which does the same after `npm ci` if needed.
+
+Conventions:
+- TypeScript strict everywhere; no `any` unless unavoidable (then say why in a comment).
+- Tests live next to the code (`foo.ts` + `foo.test.ts`). Every new behavior gets a test.
+  Backend HTTP tests use supertest on `createApp(openDb(":memory:"))`; never touch the real DB file.
+- Backend: only `src/db.ts` opens SQLite; SQL lives in repository modules, HTTP in routers. Validate
+  request bodies in the router and answer `400 {"error": string, "fields"?: {...}}`.
+- Frontend: only `src/api.ts` calls `fetch`. Components show loading, empty and error states.
+- Money is stored as integer cents; dates as `YYYY-MM-DD` strings; months as `YYYY-MM`.
+- Add dependencies with `npm install -w backend|frontend <pkg>` and commit `package-lock.json`.
+  Keep TypeScript below 6.1 (typescript-eslint peer range).
+- Commit sub-agent reports in `reviews/` together with the task's code.
