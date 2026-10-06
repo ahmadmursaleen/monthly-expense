@@ -95,9 +95,19 @@ The whole check takes ~20 s and must stay under 2 min.
 JSON over HTTP under `/api`. In development the Vite dev server proxies `/api` to the backend, so the
 frontend always uses relative URLs.
 
-| Method | Path | Response |
-|---|---|---|
-| GET | `/api/health` | `200 {"ok": true}` |
+Errors are JSON: `{"error": string, "fields"?: {"<field>": "<message>"}}`. Transaction object:
+`{id, description, amountCents, category, date, createdAt, updatedAt}` (SPEC §6).
 
-The full contract (transactions, summaries, categories, PDF report) is defined in `SPEC.md` and is
-added here by the API contract task.
+| Method | Path | Request | Success | Errors | Provided by |
+|---|---|---|---|---|---|
+| GET | `/api/health` | – | `200 {"ok": true}` | – | `app.ts` |
+| GET | `/api/categories` | – | `200 [{id, label}]` in SPEC §5 order | – | `routes/api.ts` |
+| GET | `/api/transactions?month=YYYY-MM` | – | `200 [Transaction]`, date desc, then id desc | `400` missing/invalid month | `routes/api.ts` |
+| POST | `/api/transactions` | `{description, amountCents, category, date}` | `201 Transaction` | `400` with `fields` | `routes/api.ts` |
+| PUT | `/api/transactions/:id` | same as POST (full replace) | `200 Transaction` | `404` unknown/non-numeric id, `400` with `fields` | `routes/api.ts` |
+| DELETE | `/api/transactions/:id` | – | `204` | `404` | `routes/api.ts` |
+| GET | `/api/summary?month=YYYY-MM` | – | `200 {month, totalCents, count, byCategory: [{category, totalCents, count}]}`, only spent categories, total desc | `400` | `routes/api.ts` |
+| GET | `/api/reports/YYYY-MM.pdf` | – | `200 application/pdf`, `Content-Disposition: attachment; filename="expenses-YYYY-MM.pdf"` | `400` JSON for an invalid month | `pdf-report` task |
+
+Any other `/api/*` path or method → `404 {"error"}`; a malformed JSON body → `400 {"error"}`. New API
+routers are mounted in `createApp` before the `/api` 404 catch-all.
