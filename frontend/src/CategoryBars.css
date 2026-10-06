@@ -47,7 +47,7 @@
   grid-column: 1 / -1;
   display: block;
   height: var(--space-2);
-  border-radius: 2px;
+  border-radius: var(--radius-sm);
   background: var(--bar-track);
   overflow: hidden;
 }
