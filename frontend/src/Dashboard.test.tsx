@@ -167,7 +167,7 @@ describe("month from the URL", () => {
 describe("month navigation", () => {
   it("Previous, Today and Next change the month, the URL and refetch", async () => {
     await renderLoaded();
-    expect(screen.getByRole("button", { name: "Today" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Today" })).toHaveAttribute("aria-disabled", "true");
 
     act(() => screen.getByRole("button", { name: "Previous month" }).click());
     expect(screen.getByRole("heading", { level: 1, name: "September 2026" })).toBeInTheDocument();
@@ -354,7 +354,7 @@ describe("month navigation across years", () => {
     render(<App />);
     await screen.findByText("No expenses in March 2025");
     const today = screen.getByRole("button", { name: "Today" });
-    expect(today).toBeEnabled();
+    expect(today).toHaveAttribute("aria-disabled", "false");
     act(() => today.click());
     expect(screen.getByRole("heading", { level: 1, name: "October 2026" })).toBeInTheDocument();
     expect(window.location.search).toBe("?month=2026-10");

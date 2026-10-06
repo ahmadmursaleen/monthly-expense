@@ -25,6 +25,11 @@
   margin-left: auto;
 }
 
+/* Focused only programmatically (after a delete); the ring would frame the whole list. */
+.dashboard__list:focus {
+  outline: none;
+}
+
 .skeleton {
   border-radius: var(--radius-sm);
   background: linear-gradient(90deg, var(--bar-track) 0%, var(--surface) 50%, var(--bar-track) 100%);

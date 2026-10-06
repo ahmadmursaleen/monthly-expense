@@ -19,7 +19,15 @@ export default function MonthHeader({ month, isCurrent, onPrevious, onToday, onN
         <button type="button" className="btn" onClick={onPrevious}>
           <span aria-hidden="true">‹</span> Previous month
         </button>
-        <button type="button" className="btn" onClick={onToday} disabled={isCurrent}>
+        {/* aria-disabled, not disabled: a disabled button drops keyboard focus right after it is pressed. */}
+        <button
+          type="button"
+          className="btn"
+          aria-disabled={isCurrent}
+          onClick={() => {
+            if (!isCurrent) onToday();
+          }}
+        >
           Today
         </button>
         <button type="button" className="btn" onClick={onNext}>

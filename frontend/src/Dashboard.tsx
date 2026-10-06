@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import DeleteDialog from "./DeleteDialog";
 import ErrorBanner from "./ErrorBanner";
 import ExpenseDialog from "./ExpenseDialog";
@@ -24,6 +24,8 @@ export default function Dashboard() {
   const [filters, setFilters] = useState<Filters>(emptyFilters);
   const [editor, setEditor] = useState<EditorState>({ open: false });
   const [deleting, setDeleting] = useState<Transaction | null>(null);
+  const focusListAfterDelete = useRef(false);
+  const listRef = useRef<HTMLElement>(null);
   const notify = useNotify();
 
   const today = currentMonth();
@@ -38,9 +40,18 @@ export default function Dashboard() {
   }
 
   function handleDeleted() {
+    focusListAfterDelete.current = true;
     setDeleting(null);
     reload();
   }
+
+  // The deleted row's Delete button (the dialog's opener) disappears with the reload, which would drop
+  // keyboard focus to <body>. Runs after the dialog's unmount cleanup, so it overrides the focus return.
+  useEffect(() => {
+    if (deleting !== null || !focusListAfterDelete.current) return;
+    focusListAfterDelete.current = false;
+    listRef.current?.focus();
+  }, [deleting]);
 
   return (
     <div className="dashboard">
@@ -75,26 +86,29 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {hasData ? (
-          <TransactionList
-            transactions={applyFilters(transactions, filters)}
-            categories={categories}
-            month={month}
-            filtered={filtered}
-            onEdit={(tx) => setEditor({ open: true, transaction: tx })}
-            onDelete={setDeleting}
-            onAdd={() => setEditor({ open: true, transaction: null })}
-            onClearFilters={() => setFilters(emptyFilters)}
-          />
-        ) : (
-          loading && (
-            <div className="skeleton-list" role="status" aria-label="Loading expenses">
-              {[0, 1, 2, 3].map((i) => (
-                <div key={i} className="skeleton skeleton--row" />
-              ))}
-            </div>
-          )
-        )}
+        {/* Focus target after a delete (see handleDeleted); not in the tab order. */}
+        <section ref={listRef} className="dashboard__list" aria-label="Expenses" tabIndex={-1}>
+          {hasData ? (
+            <TransactionList
+              transactions={applyFilters(transactions, filters)}
+              categories={categories}
+              month={month}
+              filtered={filtered}
+              onEdit={(tx) => setEditor({ open: true, transaction: tx })}
+              onDelete={setDeleting}
+              onAdd={() => setEditor({ open: true, transaction: null })}
+              onClearFilters={() => setFilters(emptyFilters)}
+            />
+          ) : (
+            loading && (
+              <div className="skeleton-list" role="status" aria-label="Loading expenses">
+                {[0, 1, 2, 3].map((i) => (
+                  <div key={i} className="skeleton skeleton--row" />
+                ))}
+              </div>
+            )
+          )}
+        </section>
       </main>
 
       <ExpenseDialog
